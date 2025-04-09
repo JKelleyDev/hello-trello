@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import type { RowDataPacket} from "mysql2";
+import type { RowDataPacket } from "mysql2";
 import mysql from "mysql2/promise";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
@@ -8,14 +8,15 @@ export async function POST(request: NextRequest) {
   try {
     const { email, password } = await request.json();
 
-    const connection = await mysql.createConnection({
-      host: process.env.DB_HOST!,
-      user: process.env.DB_USER!,
-      password: process.env.DB_PASSWORD!,
-      database: process.env.DB_NAME!,
-      port: 3306,
-      ssl: { rejectUnauthorized: false }
-    });
+    // Validate environment variables
+    if (!process.env.DATABASE_CONNECTION_STRING) {
+      throw new Error("DATABASE_CONNECTION_STRING is not defined");
+    }
+    if (!process.env.JWT_SECRET) {
+      throw new Error("JWT_SECRET is not defined");
+    }
+
+    const connection = await mysql.createConnection(process.env.DATABASE_CONNECTION_STRING);
 
     try {
       const [rows] = await connection.execute<RowDataPacket[]>(
@@ -36,7 +37,7 @@ export async function POST(request: NextRequest) {
 
       const token = jwt.sign(
         { userId: user.id, email: user.email },
-        process.env.JWT_SECRET!,
+        process.env.JWT_SECRET,
         { expiresIn: "1h" }
       );
 
@@ -44,16 +45,12 @@ export async function POST(request: NextRequest) {
         token,
         user: { id: user.id, email: user.email },
       });
-
-    } catch (dbError) {
-      console.error("Database query failed:", dbError);
-      return NextResponse.json({ error: "Database error" }, { status: 500 });
     } finally {
       await connection.end();
     }
-
   } catch (err) {
     console.error("Login route error:", err);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    const errorMessage = err instanceof Error ? err.message : "Unknown error";
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }
