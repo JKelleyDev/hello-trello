@@ -1,10 +1,7 @@
 {
     "$schema": "https://github.com/Azure/data-api-builder/releases/latest/download/dab.draft.schema.json",
     "data-source": {
-      "database-type": "mssql",
-      "options": {
-        "set-session-context": false 
-      },
+      "database-type": "mysql",
       "connection-string": "@env('DATABASE_CONNECTION_STRING')"
     },
     "runtime": {
@@ -20,7 +17,10 @@
       "host": {
         "mode": "production",
         "cors": {
-          "origins": ["http://localhost:4280"],
+          "origins": [
+            "http://localhost:4280",
+            "https://white-bush-0cc093d10.6.azurestaticapps.net"
+          ],
           "allow-credentials": false
         },
         "authentication": {
@@ -30,7 +30,7 @@
     },
     "entities": {
       "boards": {
-        "source": "trello_db.dbo.boards",
+        "source": "boards",
         "permissions": [
           {
             "actions": ["create", "read", "update", "delete"],
@@ -39,7 +39,7 @@
         ]
       },
       "board_users": {
-        "source": "trello_db.dbo.board_users",
+        "source": "board_users",
         "permissions": [
           {
             "actions": ["create", "read", "update", "delete"],
@@ -48,7 +48,7 @@
         ]
       },
       "cards": {
-        "source": "trello_db.dbo.cards",
+        "source": "cards",
         "permissions": [
           {
             "actions": ["create", "read", "update", "delete"],
@@ -57,7 +57,7 @@
         ]
       },
       "lists": {
-        "source": "trello_db.dbo.lists",
+        "source": "lists",
         "permissions": [
           {
             "actions": ["create", "read", "update", "delete"],
@@ -66,7 +66,7 @@
         ]
       },
       "users": {
-        "source": "trello_db.dbo.users",
+        "source": "users",
         "permissions": [
           {
             "actions": ["create", "read", "update", "delete"],
@@ -75,4 +75,5 @@
         ]
       }
     }
-}
+  }
+  
