@@ -29,14 +29,50 @@
       }
     },
     "entities": {
-      "Person": {
-        "source": "dbo.MyTestPersonTable",
+      "boards": {
+        "source": "trello_db.dbo.boards",
         "permissions": [
           {
             "actions": ["create", "read", "update", "delete"],
-            "role": "anonymous"
+            "role": "authenticated"
+          }
+        ]
+      },
+      "board_users": {
+        "source": "trello_db.dbo.board_users",
+        "permissions": [
+          {
+            "actions": ["create", "read", "update", "delete"],
+            "role": "authenticated"
+          }
+        ]
+      },
+      "cards": {
+        "source": "trello_db.dbo.cards",
+        "permissions": [
+          {
+            "actions": ["create", "read", "update", "delete"],
+            "role": "authenticated"
+          }
+        ]
+      },
+      "lists": {
+        "source": "trello_db.dbo.lists",
+        "permissions": [
+          {
+            "actions": ["create", "read", "update", "delete"],
+            "role": "authenticated"
+          }
+        ]
+      },
+      "users": {
+        "source": "trello_db.dbo.users",
+        "permissions": [
+          {
+            "actions": ["create", "read", "update", "delete"],
+            "role": "authenticated"
           }
         ]
       }
     }
-  }
+}
