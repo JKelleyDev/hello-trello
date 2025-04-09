@@ -10,11 +10,20 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@hello-pangea/dnd": "^18.0.1",
+    "@radix-ui/react-slot": "^1.2.0",
+    "axios": "^1.8.4",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "lucide-react": "^0.487.0",
     "next": "15.2.5",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "shadcn": "^2.4.0",
     "socket.io": "^4.8.1",
-    "socket.io-client": "^4.8.1"
+    "socket.io-client": "^4.8.1",
+    "tailwind-merge": "^3.2.0",
+    "tw-animate-css": "^1.2.5"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
