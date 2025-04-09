@@ -27,7 +27,8 @@ export async function POST(request: NextRequest) {
     }
 
     const user = rows[0];
-    const validPassword = await bcrypt.compare(password, user.password);
+    //const validPassword = await bcrypt.compare(password, user.password); to be implemented later with password hashing 
+    const validPassword = password === user.password;
 
     if (!validPassword) {
       return NextResponse.json({ error: "Invalid password" }, { status: 401 });
