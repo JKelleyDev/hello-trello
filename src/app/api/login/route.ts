@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import type { RowDataPacket } from "mysql2";
+import pool from "@/lib/db"; // Import the pool
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 
@@ -6,27 +8,25 @@ export async function POST(request: NextRequest) {
   try {
     const { email, password } = await request.json();
 
-    // Use DAB REST endpoint to fetch user by email
-    const dabBaseUrl = process.env.NEXT_PUBLIC_API_URL || "https://your-static-app-name.azurestaticapps.net";
-    const restUrl = `${dabBaseUrl}/rest/users?filter=email eq ${encodeURIComponent(email)}`;
-    
-    const response = await fetch(restUrl, {
-      method: "GET",
-      headers: {
-        "x-ms-api-role": "authenticated", // Assumes Static Web Apps auth
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error(`REST API error: ${response.statusText}`);
+    // Validate environment variables
+    const requiredEnvVars = ["DB_HOST", "DB_USER", "DB_PASSWORD", "DB_NAME", "DB_PORT", "JWT_SECRET"];
+    for (const envVar of requiredEnvVars) {
+      if (!process.env[envVar]) {
+        throw new Error(`${envVar} is not defined`);
+      }
     }
 
-    const users = await response.json();
-    if (!users.length) {
+    // Use the pool to execute the query
+    const [rows] = await pool.execute<RowDataPacket[]>(
+      "SELECT id, email, password FROM users WHERE email = ?",
+      [email]
+    );
+
+    if (!rows || rows.length === 0) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    const user = users[0];
+    const user = rows[0];
     const validPassword = await bcrypt.compare(password, user.password);
 
     if (!validPassword) {
@@ -44,8 +44,11 @@ export async function POST(request: NextRequest) {
       user: { id: user.id, email: user.email },
     });
   } catch (err) {
-    console.error("Login route error:", err);
-    const errorMessage = err instanceof Error ? err.message : "Unknown error";
+    console.error("Login route error:", {
+      message: err instanceof Error ? err.message : "Unknown error",
+      stack: err instanceof Error ? err.stack : undefined,
+    });
+    const errorMessage = err instanceof Error ? err.message : "Internal server error";
     return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }
