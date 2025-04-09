@@ -18,7 +18,6 @@ export async function POST(request: NextRequest) {
     });
 
     try {
-        // After the query:
       const [rows] = await connection.execute<RowDataPacket[]>(
         "SELECT id, email, password FROM users WHERE email = ?",
         [email]
@@ -28,9 +27,9 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: "User not found" }, { status: 404 });
       }
 
-      const user: any = rows[0];
-
+      const user = rows[0];
       const validPassword = await bcrypt.compare(password, user.password);
+
       if (!validPassword) {
         return NextResponse.json({ error: "Invalid password" }, { status: 401 });
       }
@@ -45,11 +44,16 @@ export async function POST(request: NextRequest) {
         token,
         user: { id: user.id, email: user.email },
       });
+
+    } catch (dbError) {
+      console.error("Database query failed:", dbError);
+      return NextResponse.json({ error: "Database error" }, { status: 500 });
     } finally {
       await connection.end();
     }
-  } catch (error) {
-    console.error("Login error:", error);
+
+  } catch (err) {
+    console.error("Login route error:", err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
