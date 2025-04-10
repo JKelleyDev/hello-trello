@@ -42,8 +42,9 @@ export default function Login() {
       console.log("Login response:", response.data);
       if (response.data.token) {
         localStorage.setItem("token", response.data.token);
+        // Now storing user object with id, email, and name
         localStorage.setItem("user", JSON.stringify(response.data.user));
-        router.push("/dashboard");
+        router.push("/dashboard"); // after authenicating user, reroute to the dashbaord page
       } else {
         setError("No token received from server.");
       }
@@ -84,11 +85,12 @@ export default function Login() {
             Login
           </Button>
         </form>
+      
         <div className="mt-4 text-center">
           <Link href="/create-account">
-            <Button variant="outline" className="w-full">
+            <Button variant="outline" className="w-full"> 
               Create Account
-            </Button>
+            </Button> 
           </Link>
         </div>
       </div>

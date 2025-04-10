@@ -1,413 +1,282 @@
-"use client";
+"use client"; // Client Component
 
 import { useState, useEffect } from "react";
-import { io } from "socket.io-client";
-import { useRouter } from "next/navigation";
+import axios from "axios";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import {
-  DragDropContext,
-  Droppable,
-  Draggable,
-  DropResult,
-} from "@hello-pangea/dnd";
-
-const socket = io();
+import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
 
 export default function Dashboard() {
-  const [boards, setBoards] = useState<any[]>([]);
-  const [selectedBoardId, setSelectedBoardId] = useState<number | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [newCardTitles, setNewCardTitles] = useState<{ [key: number]: string }>({});
-  const [boardUsers, setBoardUsers] = useState<any[]>([]);
-  const [newUserEmail, setNewUserEmail] = useState("");
-  const [newUserRole, setNewUserRole] = useState<"Owner" | "Editor" | "Viewer">("Viewer");
-  const [userRole, setUserRole] = useState<string | null>(null);
-  const [newBoardName, setNewBoardName] = useState(""); // New state for board creation
-  const router = useRouter();
+  const [user, setUser] = useState<{ id: number; email: string; name: string } | null>(null);
+  const [boards, setBoards] = useState<
+    { boardUserId: number; boardId: number; name: string; role: string }[]
+  >([]);
+  const [selectedBoard, setSelectedBoard] = useState<
+    { boardId: number; name: string; role: string } | null
+  >(null);
+  const [lists, setLists] = useState<{ id: number; name: string }[]>([]);
+  const [cards, setCards] = useState<{ id: number; board_id: number; list_id: number; title: string }[]>([]);
+  const [error, setError] = useState<string>("");
+  const [editingCard, setEditingCard] = useState<{ id: number; title: string } | null>(null);
 
   useEffect(() => {
-    const fetchBoards = async () => {
-      try {
-        const response = await fetch("/api/boards", {
-          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-        });
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-        const data = await response.json();
-        console.log("Fetched boards:", JSON.stringify(data, null, 2));
-        setBoards(data);
-        setSelectedBoardId(data[0]?.id || null);
-        setLoading(false);
-      } catch (error) {
-        console.error("Error fetching boards:", error);
-        setLoading(false);
-      }
-    };
-
-    fetchBoards();
-
-    socket.on("connect", () => console.log("Connected to Socket.IO"));
-    socket.on("boardUpdate", (updatedBoard) => {
-      setBoards((prev) =>
-        prev.map((board) =>
-          board.id === updatedBoard.id ? updatedBoard : board
-        )
-      );
-    });
-
-    return () => {
-      socket.off("boardUpdate");
-      socket.disconnect();
-    };
+    const userString = localStorage.getItem("user");
+    if (userString) {
+      setUser(JSON.parse(userString));
+    } else {
+      setError("No user data found. Please log in.");
+    }
   }, []);
 
   useEffect(() => {
-    const fetchBoardUsers = async () => {
-      if (!selectedBoardId) return;
+    if (!user) return;
+    const fetchBoards = async () => {
       try {
-        const response = await fetch(`/api/board-users?boardId=${selectedBoardId}`, {
-          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        const token = localStorage.getItem("token");
+        if (!token) {
+          setError("No token found. Please log in.");
+          return;
+        }
+        const response = await axios.get("/api/boards", {
+          headers: { Authorization: `Bearer ${token}` },
         });
-        if (!response.ok) throw new Error("Failed to fetch board users");
-        const data = await response.json();
-        setBoardUsers(data.users);
-        setUserRole(data.currentUserRole);
-      } catch (error) {
-        console.error("Error fetching board users:", error);
+        setBoards(response.data.boards);
+        if (response.data.boards.length > 0) {
+          setSelectedBoard({
+            boardId: response.data.boards[0].boardId,
+            name: response.data.boards[0].name,
+            role: response.data.boards[0].role,
+          });
+        }
+      } catch (err: any) {
+        console.error("Error fetching boards:", err);
+        setError(err.response?.data?.error || "Failed to load boards.");
       }
     };
-    fetchBoardUsers();
-  }, [selectedBoardId]);
+    fetchBoards();
+  }, [user]);
 
-  const addCard = async (boardId: number, listId: number) => {
-    if (userRole === "Viewer") return;
-    const title = newCardTitles[listId];
-    if (!title) return;
-    const tempCard = { id: `temp-${Date.now()}`, board_id: boardId, list_id: listId, title };
-    const updatedBoard = {
-      ...boards.find((b) => b.id === boardId),
-      lists: boards.find((b) => b.id === boardId)!.lists.map((list: any) =>
-        list.id === listId ? { ...list, cards: [...list.cards, tempCard] } : list
-      ),
-    };
-    setBoards((prev) =>
-      prev.map((board) => (board.id === boardId ? updatedBoard : board))
-    );
-    setNewCardTitles((prev) => ({ ...prev, [listId]: "" }));
-
-    try {
-      const response = await fetch("/api/update-board", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-        body: JSON.stringify({ boardId, lists: updatedBoard.lists }),
-      });
-      const data = await response.json();
-      if (data.updatedBoard) {
-        setBoards((prev) =>
-          prev.map((board) => (board.id === boardId ? data.updatedBoard : board))
-        );
-        socket.emit("updateBoard", data.updatedBoard);
-      }
-    } catch (error) {
-      console.error("Error adding card:", error);
+  useEffect(() => {
+    if (!selectedBoard) {
+      setLists([]);
+      setCards([]);
+      return;
     }
-  };
+    const fetchData = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) {
+          setError("No token found. Please log in.");
+          return;
+        }
 
-  const editCard = async (boardId: number, listId: number, cardId: number, newTitle: string) => {
-    if (userRole === "Viewer") return;
-    const updatedBoard = {
-      ...boards.find((b) => b.id === boardId),
-      lists: boards.find((b) => b.id === boardId)!.lists.map((list: any) =>
-        list.id === listId
-          ? {
-              ...list,
-              cards: list.cards.map((card: any) =>
-                card.id === cardId ? { ...card, title: newTitle } : card
-              ),
-            }
-          : list
-      ),
-    };
-    updateBoards(updatedBoard);
-  };
+        const [listsResponse, cardsResponse] = await Promise.all([
+          axios.get(`/api/boards/${selectedBoard.boardId}/lists`, {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+          axios.get(`/api/boards/${selectedBoard.boardId}/cards`, {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+        ]);
 
-  const deleteCard = async (boardId: number, listId: number, cardId: number) => {
-    if (userRole === "Viewer") return;
-    const updatedBoard = {
-      ...boards.find((b) => b.id === boardId),
-      lists: boards.find((b) => b.id === boardId)!.lists.map((list: any) =>
-        list.id === listId
-          ? { ...list, cards: list.cards.filter((card: any) => card.id !== cardId) }
-          : list
-      ),
+        setLists(listsResponse.data.lists);
+        setCards(cardsResponse.data.cards);
+      } catch (err: any) {
+        console.error("Error fetching data:", err);
+        setError(err.response?.data?.error || "Failed to load data.");
+      }
     };
-    updateBoards(updatedBoard);
-  };
+    fetchData();
+  }, [selectedBoard]);
 
   const onDragEnd = async (result: DropResult) => {
-    if (userRole === "Viewer") return;
     const { source, destination } = result;
-    if (!destination) return;
+    if (!destination || source.droppableId === destination.droppableId) return;
 
-    const board = boards.find((b) => b.id === selectedBoardId);
-    const sourceList = board.lists.find((list: any) => list.id === parseInt(source.droppableId));
-    const destList = board.lists.find((list: any) => list.id === parseInt(destination.droppableId));
+    const movedCard = cards.find((card) => card.id === parseInt(result.draggableId));
+    if (!movedCard) return;
 
-    if (!sourceList || !destList) return;
-
-    const updatedBoard = { ...board };
-    const [movedCard] = sourceList.cards.splice(source.index, 1);
-
-    if (source.droppableId !== destination.droppableId) {
-      movedCard.list_id = destList.id;
-    }
-
-    destList.cards.splice(destination.index, 0, movedCard);
-    updateBoards(updatedBoard);
-  };
-
-  const updateBoards = async (updatedBoard: any) => {
-    setBoards((prev) =>
-      prev.map((board) => (board.id === updatedBoard.id ? updatedBoard : board))
+    const updatedCards = cards.map((card) =>
+      card.id === movedCard.id ? { ...card, list_id: parseInt(destination.droppableId) } : card
     );
-    socket.emit("updateBoard", updatedBoard);
-    const response = await fetch("/api/update-board", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${localStorage.getItem("token")}`,
-      },
-      body: JSON.stringify({ boardId: updatedBoard.id, lists: updatedBoard.lists }),
-    });
-    const data = await response.json();
-    if (data.updatedBoard) {
-      setBoards((prev) =>
-        prev.map((board) => (board.id === data.updatedBoard.id ? data.updatedBoard : board))
+    setCards(updatedCards);
+
+    try {
+      const token = localStorage.getItem("token");
+      await axios.put(
+        `/api/cards/${movedCard.id}`,
+        { listId: parseInt(destination.droppableId) },
+        { headers: { Authorization: `Bearer ${token}` } }
       );
+    } catch (err) {
+      console.error("Error updating card position:", err);
+      setError("Failed to update card position.");
+      setCards(cards); // Revert on error
     }
   };
 
-  const addBoardUser = async () => {
-    if (userRole !== "Owner") return;
+  const handleEditCard = async () => {
+    if (!editingCard) return;
+
     try {
-      const response = await fetch("/api/board-users", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-        body: JSON.stringify({ boardId: selectedBoardId, email: newUserEmail, role: newUserRole }),
-      });
-      if (response.ok) {
-        const fetchResponse = await fetch(`/api/board-users?boardId=${selectedBoardId}`, {
-          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-        });
-        const data = await fetchResponse.json();
-        setBoardUsers(data.users);
-        setUserRole(data.currentUserRole);
-        setNewUserEmail("");
-        setNewUserRole("Viewer");
-      } else {
-        throw new Error("Failed to add user");
-      }
-    } catch (error) {
-      console.error("Error adding user:", error);
-      alert("Error adding user");
+      const token = localStorage.getItem("token");
+      await axios.put(
+        `/api/cards/${editingCard.id}`,
+        { title: editingCard.title },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setCards(cards.map((card) => (card.id === editingCard.id ? { ...card, title: editingCard.title } : card)));
+      setEditingCard(null);
+    } catch (err) {
+      console.error("Error editing card:", err);
+      setError("Failed to edit card.");
     }
   };
 
-  const createBoard = async () => {
-    if (!newBoardName.trim()) return;
+  const handleDeleteCard = async (cardId: number) => {
     try {
-      const response = await fetch("/api/create-board", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-        body: JSON.stringify({ name: newBoardName }),
+      const token = localStorage.getItem("token");
+      await axios.delete(`/api/cards/${cardId}`, {
+        headers: { Authorization: `Bearer ${token}` },
       });
-      if (!response.ok) throw new Error("Failed to create board");
-      const { board } = await response.json();
-      setBoards((prev) => [...prev, board]);
-      setSelectedBoardId(board.id); // Auto-select the new board
-      setNewBoardName(""); // Clear input
-    } catch (error) {
-      console.error("Error creating board:", error);
-      alert("Failed to create board");
+      setCards(cards.filter((card) => card.id !== cardId));
+    } catch (err) {
+      console.error("Error deleting card:", err);
+      setError("Failed to delete card.");
     }
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    socket.disconnect();
-    router.push("/login");
-  };
-
-  if (loading) return <div>Loading...</div>;
+  if (!user) {
+    return <div className="p-4 text-red-500">{error || "Please log in"}</div>;
+  }
 
   return (
-    <div className="p-6">
-      <h1 className="text-3xl font-bold mb-6">Trello Dashboard</h1>
-      <div className="flex justify-between mb-4">
-        <div className="flex items-center space-x-2">
-          {boards.length > 0 ? (
-            <Select
-              value={String(selectedBoardId)}
-              onValueChange={(value) => setSelectedBoardId(parseInt(value))}
-            >
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Select a board" />
-              </SelectTrigger>
-              <SelectContent>
-                {boards.map((board) => (
-                  <SelectItem key={board.id} value={String(board.id)}>
-                    {board.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          ) : (
-            <p>No boards available</p>
-          )}
-          <Input
-            value={newBoardName}
-            onChange={(e) => setNewBoardName(e.target.value)}
-            placeholder="New board name"
-            className="w-[180px]"
-          />
-          <Button onClick={createBoard}>Create Board</Button>
-        </div>
-        <div className="space-x-2">
-          <Button onClick={() => router.push("/settings")} variant="outline">
-            Settings
-          </Button>
-          <Button onClick={handleLogout} variant="outline">
-            Logout
-          </Button>
-        </div>
+    <div className="min-h-screen p-8 bg-gray-100">
+      <h1 className="text-3xl font-bold mb-6">Welcome, {user.name}</h1>
+      {error && <p className="text-red-500 mb-4">{error}</p>}
+
+      <div className="mb-6">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline">
+              {selectedBoard ? `${selectedBoard.name} (${selectedBoard.role})` : "Select a Board"}
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            <DropdownMenuLabel>Your Boards</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            {boards.length > 0 ? (
+              boards.map((board) => (
+                <DropdownMenuItem
+                  key={board.boardUserId}
+                  onClick={() =>
+                    setSelectedBoard({
+                      boardId: board.boardId,
+                      name: board.name,
+                      role: board.role,
+                    })
+                  }
+                >
+                  {board.name} ({board.role})
+                </DropdownMenuItem>
+              ))
+            ) : (
+              <DropdownMenuItem disabled>No boards found</DropdownMenuItem>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
-      {selectedBoardId && userRole === "Owner" && (
-        <div className="mb-4">
-          <h3 className="text-lg font-semibold">Board Users</h3>
-          <ul>
-            {boardUsers.map((user) => (
-              <li key={user.id}>{user.name} ({user.email}) - {user.role}</li>
-            ))}
-          </ul>
-          <Input
-            value={newUserEmail}
-            onChange={(e) => setNewUserEmail(e.target.value)}
-            placeholder="User email to add"
-            className="mt-2"
-          />
-          <Select
-            value={newUserRole}
-            onValueChange={(value) => setNewUserRole(value as "Owner" | "Editor" | "Viewer")}
-          >
-            <SelectTrigger className="w-[180px] mt-2">
-              <SelectValue placeholder="Select role" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="Owner">Owner</SelectItem>
-              <SelectItem value="Editor">Editor</SelectItem>
-              <SelectItem value="Viewer">Viewer</SelectItem>
-            </SelectContent>
-          </Select>
-          <Button onClick={addBoardUser} className="mt-2">Add User</Button>
-        </div>
-      )}
-      {selectedBoardId ? (
+
+      {selectedBoard && (
         <DragDropContext onDragEnd={onDragEnd}>
-          <div key={selectedBoardId}>
-            <h2 className="text-xl font-semibold mb-4">
-              {boards.find((b) => b.id === selectedBoardId)?.name}
-            </h2>
-            <div className="flex space-x-4 overflow-x-auto">
-              {(boards.find((b) => b.id === selectedBoardId)?.lists || []).map((list: any) => (
-                <Card key={list.id} className="w-72 flex-shrink-0 mb-4">
-                  <CardHeader>
-                    <CardTitle>{list.name}</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <Droppable droppableId={String(list.id)} isDropDisabled={userRole === "Viewer"}>
-                      {(provided) => (
-                        <div
-                          ref={provided.innerRef}
-                          {...provided.droppableProps}
-                          className="min-h-[100px]"
+          <div className="flex space-x-4">
+            {lists.map((list) => (
+              <Droppable droppableId={list.id.toString()} key={list.id}>
+                {(provided) => (
+                  <div
+                    ref={provided.innerRef}
+                    {...provided.droppableProps}
+                    className="flex-1 bg-white p-4 rounded-lg shadow-md min-h-[300px]"
+                  >
+                    <h2 className="text-xl font-semibold mb-4">{list.name}</h2>
+                    {cards
+                      .filter((card) => card.list_id === list.id)
+                      .map((card, index) => (
+                        <Draggable
+                          key={card.id}
+                          draggableId={card.id.toString()}
+                          index={index}
                         >
-                          {(list.cards || []).map((card: any, index: number) => (
-                            <Draggable
-                              draggableId={String(card.id)}
-                              index={index}
-                              key={card.id}
+                          {(provided) => (
+                            <Card
+                              ref={provided.innerRef}
+                              {...provided.draggableProps}
+                              {...provided.dragHandleProps}
+                              className="mb-2"
                             >
-                              {(provided) => (
-                                <div
-                                  ref={provided.innerRef}
-                                  {...provided.draggableProps}
-                                  {...provided.dragHandleProps}
-                                  className="bg-gray-100 p-2 mb-2 rounded shadow flex justify-between items-center"
-                                  onDoubleClick={() => {
-                                    if (userRole === "Viewer") return;
-                                    const newTitle = prompt("Edit card title:", card.title);
-                                    if (newTitle) editCard(selectedBoardId, list.id, card.id, newTitle);
-                                  }}
-                                >
-                                  {card.title}
-                                  {userRole !== "Viewer" && (
-                                    <Button
-                                      variant="destructive"
-                                      size="sm"
-                                      onClick={() => deleteCard(selectedBoardId, list.id, card.id)}
-                                    >
-                                      Delete
-                                    </Button>
-                                  )}
+                              <CardContent className="p-4 flex justify-between items-center">
+                                <span>{card.title}</span>
+                                <div>
+                                  <Dialog>
+                                    <DialogTrigger asChild>
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="mr-2"
+                                        onClick={() => setEditingCard({ id: card.id, title: card.title })}
+                                      >
+                                        Edit
+                                      </Button>
+                                    </DialogTrigger>
+                                    <DialogContent>
+                                      <DialogHeader>
+                                        <DialogTitle>Edit Card</DialogTitle>
+                                      </DialogHeader>
+                                      <Input
+                                        value={editingCard?.title || ""}
+                                        onChange={(e) =>
+                                          setEditingCard(
+                                            editingCard ? { ...editingCard, title: e.target.value } : null
+                                          )
+                                        }
+                                        placeholder="Card Title"
+                                      />
+                                      <Button onClick={handleEditCard}>Save</Button>
+                                    </DialogContent>
+                                  </Dialog>
+                                  <Button
+                                    variant="destructive"
+                                    size="sm"
+                                    onClick={() => handleDeleteCard(card.id)}
+                                  >
+                                    Delete
+                                  </Button>
                                 </div>
-                              )}
-                            </Draggable>
-                          ))}
-                          {provided.placeholder}
-                        </div>
-                      )}
-                    </Droppable>
-                    {userRole !== "Viewer" && (
-                      <>
-                        <Input
-                          value={newCardTitles[list.id] || ""}
-                          onChange={(e) =>
-                            setNewCardTitles((prev) => ({
-                              ...prev,
-                              [list.id]: e.target.value,
-                            }))
-                          }
-                          placeholder="New card title"
-                          className="mb-2"
-                        />
-                        <Button
-                          onClick={() => addCard(selectedBoardId, list.id)}
-                          className="w-full"
-                        >
-                          Add Card
-                        </Button>
-                      </>
+                              </CardContent>
+                            </Card>
+                          )}
+                        </Draggable>
+                      ))}
+                    {cards.filter((card) => card.list_id === list.id).length === 0 && (
+                      <div className="text-gray-500">No tasks yet</div>
                     )}
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+                    {provided.placeholder}
+                  </div>
+                )}
+              </Droppable>
+            ))}
           </div>
         </DragDropContext>
-      ) : (
-        <p>Create a board to get started!</p>
       )}
     </div>
   );

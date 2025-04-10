@@ -16,9 +16,9 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Use the pool to execute the query
+    // Use the pool to execute the query, now including 'name'
     const [rows] = await pool.execute<RowDataPacket[]>(
-      "SELECT id, email, password FROM users WHERE email = ?",
+      "SELECT id, email, name, password FROM users WHERE email = ?",
       [email]
     );
 
@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
     }
 
     const user = rows[0];
-    //const validPassword = await bcrypt.compare(password, user.password); to be implemented later with password hashing 
+    //const validPassword = await bcrypt.compare(password, user.password); // To be implemented later with password hashing
     const validPassword = password === user.password;
 
     if (!validPassword) {
@@ -35,14 +35,14 @@ export async function POST(request: NextRequest) {
     }
 
     const token = jwt.sign(
-      { userId: user.id, email: user.email },
+      { userId: user.id, email: user.email, name: user.name }, // Include name in token payload (optional)
       process.env.JWT_SECRET!,
       { expiresIn: "1h" }
     );
 
     return NextResponse.json({
       token,
-      user: { id: user.id, email: user.email },
+      user: { id: user.id, email: user.email, name: user.name }, // Include name in response
     });
   } catch (err) {
     console.error("Login route error:", {
