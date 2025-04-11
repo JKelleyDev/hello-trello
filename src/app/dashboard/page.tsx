@@ -28,6 +28,9 @@ export default function Dashboard() {
   const [cards, setCards] = useState<{ id: number; board_id: number; list_id: number; title: string }[]>([]);
   const [error, setError] = useState<string>("");
   const [editingCard, setEditingCard] = useState<{ id: number; title: string } | null>(null);
+  const [newBoardName, setNewBoardName] = useState("");
+  const [creatingBoard, setCreatingBoard] = useState(false);
+
 
   useEffect(() => {
     const userString = localStorage.getItem("user");
@@ -99,6 +102,45 @@ export default function Dashboard() {
     fetchData();
   }, [selectedBoard]);
 
+  const handleCreateBoard = async () => {
+    if (!newBoardName || !user) return;
+  
+    try {
+      const token = localStorage.getItem("token");
+      const response = await axios.post(
+        "/api/boards",
+        { name: newBoardName },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+  
+      const newBoard = response.data.board;
+  
+      // Automatically add default lists
+      await axios.post(
+        `/api/boards/${newBoard.boardId}/lists/bulk`,
+        {
+          lists: ["To Do", "In Progress", "Completed"].map((name) => ({ name })),
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+  
+      const updatedBoards = [...boards, { ...newBoard, boardUserId: newBoard.boardUserId, role: "owner" }];
+      setBoards(updatedBoards);
+      setSelectedBoard({
+        boardId: newBoard.boardId,
+        name: newBoard.name,
+        role: "owner",
+      });
+  
+      setNewBoardName("");
+      setCreatingBoard(false);
+    } catch (err: any) {
+      console.error("Error creating board:", err);
+      setError(err.response?.data?.error || "Failed to create board.");
+    }
+  };
+  
+
   const onDragEnd = async (result: DropResult) => {
     const { source, destination } = result;
     if (!destination || source.droppableId === destination.droppableId) return;
@@ -166,36 +208,60 @@ export default function Dashboard() {
       {error && <p className="text-red-500 mb-4">{error}</p>}
 
       <div className="mb-6">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline">
-              {selectedBoard ? `${selectedBoard.name} (${selectedBoard.role})` : "Select a Board"}
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent>
-            <DropdownMenuLabel>Your Boards</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            {boards.length > 0 ? (
-              boards.map((board) => (
-                <DropdownMenuItem
-                  key={board.boardUserId}
-                  onClick={() =>
-                    setSelectedBoard({
-                      boardId: board.boardId,
-                      name: board.name,
-                      role: board.role,
-                    })
-                  }
-                >
-                  {board.name} ({board.role})
-                </DropdownMenuItem>
-              ))
-            ) : (
-              <DropdownMenuItem disabled>No boards found</DropdownMenuItem>
-            )}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
+  <DropdownMenu>
+    <DropdownMenuTrigger asChild>
+      <Button variant="outline">
+        {selectedBoard ? `${selectedBoard.name} (${selectedBoard.role})` : "Select a Board"}
+      </Button>
+    </DropdownMenuTrigger>
+    <DropdownMenuContent>
+      <DropdownMenuLabel>Your Boards</DropdownMenuLabel>
+      <DropdownMenuSeparator />
+      {boards.length > 0 ? (
+        boards.map((board) => (
+          <DropdownMenuItem
+            key={board.boardUserId}
+            onClick={() =>
+              setSelectedBoard({
+                boardId: board.boardId,
+                name: board.name,
+                role: board.role,
+              })
+            }
+          >
+            {board.name} ({board.role})
+          </DropdownMenuItem>
+        ))
+      ) : (
+        <DropdownMenuItem disabled>No boards found</DropdownMenuItem>
+      )}
+      <DropdownMenuSeparator />
+
+      {/* Create Board Dialog Trigger */}
+      <Dialog open={creatingBoard} onOpenChange={setCreatingBoard}>
+        <DialogTrigger asChild>
+          <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+            Create Board
+          </DropdownMenuItem>
+        </DialogTrigger>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create New Board</DialogTitle>
+          </DialogHeader>
+          <Input
+            placeholder="Board Name"
+            value={newBoardName}
+            onChange={(e) => setNewBoardName(e.target.value)}
+          />
+          <Button onClick={handleCreateBoard} className="mt-2">
+            Create
+          </Button>
+        </DialogContent>
+      </Dialog>
+    </DropdownMenuContent>
+  </DropdownMenu>
+</div>
+
 
       {selectedBoard && (
         <DragDropContext onDragEnd={onDragEnd}>

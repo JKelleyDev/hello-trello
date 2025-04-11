@@ -51,3 +51,62 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
+
+export async function POST(request: NextRequest) {
+  try {
+    const authHeader = request.headers.get("Authorization");
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return NextResponse.json({ error: "No token provided" }, { status: 401 });
+    }
+
+    const token = authHeader.split(" ")[1];
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { userId: number };
+    const { name } = await request.json();
+
+    if (!name) {
+      return NextResponse.json({ error: "Board name is required" }, { status: 400 });
+    }
+
+    const conn = await pool.getConnection();
+
+    try {
+      await conn.beginTransaction();
+
+      // Insert into boards
+      const [boardResult] = await conn.execute(
+        "INSERT INTO boards (name) VALUES (?)",
+        [name]
+      );
+      const boardId = (boardResult as any).insertId;
+
+      // Insert into board_users
+      const [boardUserResult] = await conn.execute(
+        "INSERT INTO board_users (user_id, board_id, role) VALUES (?, ?, 'owner')",
+        [decoded.userId, boardId]
+      );
+      const boardUserId = (boardUserResult as any).insertId;
+
+      await conn.commit();
+      return NextResponse.json(
+        {
+          board: {
+            boardId,
+            name,
+            boardUserId,
+            role: "owner",
+          },
+        },
+        { status: 201 }
+      );
+    } catch (err) {
+      await conn.rollback();
+      console.error("Error creating board:", err);
+      return NextResponse.json({ error: "Failed to create board" }, { status: 500 });
+    } finally {
+      conn.release();
+    }
+  } catch (err) {
+    console.error("POST /api/boards error:", err);
+    return NextResponse.json({ error: "Server error" }, { status: 500 });
+  }
+}
