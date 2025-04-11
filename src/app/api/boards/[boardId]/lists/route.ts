@@ -3,7 +3,10 @@ import type { RowDataPacket } from "mysql2";
 import pool from "@/lib/db"; // Your MySQL connection pool
 import jwt from "jsonwebtoken";
 
-export async function GET(request: NextRequest, { params }: { params: { boardId: string } }) {
+export async function GET(
+  request: NextRequest,
+  context: { params: Promise<{ boardId: string }> }
+) {
   try {
     // Get the token from the Authorization header
     const authHeader = request.headers.get("Authorization");
@@ -14,7 +17,9 @@ export async function GET(request: NextRequest, { params }: { params: { boardId:
     const token = authHeader.split(" ")[1];
     const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { userId: number };
 
-    const boardId = parseInt(params.boardId, 10);
+    // Await the Promise-wrapped params to extract boardId
+    const resolvedParams = await context.params;
+    const boardId = parseInt(resolvedParams.boardId, 10);
     if (isNaN(boardId)) {
       return NextResponse.json({ error: "Invalid board ID" }, { status: 400 });
     }
