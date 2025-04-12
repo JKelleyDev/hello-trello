@@ -3,38 +3,39 @@ import pool from "@/lib/db";
 import jwt from "jsonwebtoken";
 import type { RowDataPacket } from "mysql2";
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { boardId: string } }
-) {
-  try {
-    const authHeader = request.headers.get("Authorization");
-    if (!authHeader?.startsWith("Bearer ")) {
-      return NextResponse.json({ error: "No token provided" }, { status: 401 });
+export async function GET(request: NextRequest) {
+    try {
+      const authHeader = request.headers.get("Authorization");
+      if (!authHeader?.startsWith("Bearer ")) {
+        return NextResponse.json({ error: "No token provided" }, { status: 401 });
+      }
+  
+      const token = authHeader.split(" ")[1];
+      jwt.verify(token, process.env.JWT_SECRET!);
+  
+      const url = new URL(request.url);
+      const boardId = url.pathname.split("/").findLast((seg) => seg !== "users");
+  
+      if (!boardId) {
+        return NextResponse.json({ error: "Board ID not found in URL" }, { status: 400 });
+      }
+  
+      const [rows] = await pool.execute<RowDataPacket[]>(
+        `SELECT u.id, u.name, u.email, bu.role
+         FROM board_users bu
+         INNER JOIN users u ON bu.user_id = u.id
+         WHERE bu.board_id = ?`,
+        [boardId]
+      );
+  
+      return NextResponse.json({ users: rows }, { status: 200 });
+    } catch (err) {
+      console.error("GET board users error:", err);
+      return NextResponse.json({ error: "Failed to fetch board users" }, { status: 500 });
     }
-
-    jwt.verify(authHeader.split(" ")[1], process.env.JWT_SECRET!); // Just verify
-
-    const boardId = parseInt(params.boardId);
-    const [rows] = await pool.execute<RowDataPacket[]>(
-      `SELECT u.id, u.name, u.email, bu.role
-       FROM board_users bu
-       INNER JOIN users u ON bu.user_id = u.id
-       WHERE bu.board_id = ?`,
-      [boardId]
-    );
-
-    return NextResponse.json({ users: rows }, { status: 200 });
-  } catch (err) {
-    console.error("GET board users error:", err);
-    return NextResponse.json({ error: "Failed to fetch board users" }, { status: 500 });
   }
-}
 
-export async function POST(
-    request: NextRequest,
-    { params }: { params: { boardId: string } }
-  ) {
+  export async function POST(request: NextRequest) {
     try {
       const authHeader = request.headers.get("Authorization");
       if (!authHeader?.startsWith("Bearer ")) {
@@ -45,16 +46,18 @@ export async function POST(
       const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { userId: number };
   
       const { email, role } = await request.json();
-      const boardId = parseInt(params.boardId);
   
-      if (!email || !role) {
-        return NextResponse.json({ error: "Email and role are required" }, { status: 400 });
+      const url = new URL(request.url);
+      const boardId = url.pathname.split("/").findLast((seg) => seg !== "users");
+  
+      if (!email || !role || !boardId) {
+        return NextResponse.json({ error: "Email, role, and board ID are required" }, { status: 400 });
       }
   
       const conn = await pool.getConnection();
   
       try {
-        // Check if the user exists
+        // Check if user exists
         const [userRows] = await conn.execute<RowDataPacket[]>(
           "SELECT id FROM users WHERE email = ?",
           [email]
@@ -69,7 +72,7 @@ export async function POST(
   
         const userId = userRows[0].id;
   
-        // Check if user already assigned
+        // Check if already assigned
         const [existingRows] = await conn.execute<RowDataPacket[]>(
           "SELECT * FROM board_users WHERE board_id = ? AND user_id = ?",
           [boardId, userId]
@@ -100,4 +103,3 @@ export async function POST(
       return NextResponse.json({ error: "Server error" }, { status: 500 });
     }
   }
-  
