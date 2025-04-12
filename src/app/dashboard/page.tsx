@@ -115,15 +115,6 @@ export default function Dashboard() {
   
       const newBoard = response.data.board;
   
-      // Automatically add default lists
-      await axios.post(
-        `/api/boards/${newBoard.boardId}/lists/bulk`,
-        {
-          lists: ["To Do", "In Progress", "Completed"].map((name) => ({ name })),
-        },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-  
       const updatedBoards = [...boards, { ...newBoard, boardUserId: newBoard.boardUserId, role: "owner" }];
       setBoards(updatedBoards);
       setSelectedBoard({
