@@ -16,6 +16,17 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from "@/components/ui/input";
 import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
 
+import {
+  Avatar,
+  AvatarFallback,
+} from "@/components/ui/avatar";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+
 export default function Dashboard() {
   const [user, setUser] = useState<{ id: number; email: string; name: string } | null>(null);
   const [boards, setBoards] = useState<
@@ -30,6 +41,9 @@ export default function Dashboard() {
   const [editingCard, setEditingCard] = useState<{ id: number; title: string } | null>(null);
   const [newBoardName, setNewBoardName] = useState("");
   const [creatingBoard, setCreatingBoard] = useState(false);
+  const [boardUsers, setBoardUsers] = useState<
+  { id: number; name: string; email: string; role: string }[]
+  >([]);
 
 
   useEffect(() => {
@@ -99,6 +113,18 @@ export default function Dashboard() {
         setError(err.response?.data?.error || "Failed to load data.");
       }
     };
+    const fetchBoardUsers = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const res = await axios.get(`/api/boards/${selectedBoard.boardId}/users`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setBoardUsers(res.data.users);
+      } catch (err) {
+        console.error("Failed to fetch board users:", err);
+      }
+    };
+    fetchBoardUsers();
     fetchData();
   }, [selectedBoard]);
 
@@ -129,6 +155,8 @@ export default function Dashboard() {
       console.error("Error creating board:", err);
       setError(err.response?.data?.error || "Failed to create board.");
     }
+
+
   };
   
 
@@ -199,6 +227,8 @@ export default function Dashboard() {
       {error && <p className="text-red-500 mb-4">{error}</p>}
 
       <div className="mb-6">
+     
+
   <DropdownMenu>
     <DropdownMenuTrigger asChild>
       <Button variant="outline">
@@ -251,7 +281,28 @@ export default function Dashboard() {
       </Dialog>
     </DropdownMenuContent>
   </DropdownMenu>
-</div>
+  </div>
+  <TooltipProvider>
+        <div className="flex items-center space-x-2 mb-4">
+          {boardUsers.map((u) => (
+            <Tooltip key={u.id}>
+              <TooltipTrigger asChild>
+              <Avatar className="h-8 w-8">
+                <AvatarFallback className="bg-gray-300 text-black font-semibold">
+                  {u.name
+                    .split(" ")
+                    .map((n) => n[0])
+                    .join("")
+                    .toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+              </TooltipTrigger>
+              <TooltipContent>{u.name} ({u.role})</TooltipContent>
+            </Tooltip>
+          ))}
+        </div>
+      </TooltipProvider>
+
 
 
       {selectedBoard && (
