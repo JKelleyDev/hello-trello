@@ -26,6 +26,14 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  Select,
+  SelectTrigger,
+  SelectContent,
+  SelectItem,
+  SelectValue,
+} from "@/components/ui/select";
+
 
 export default function Dashboard() {
   const [user, setUser] = useState<{ id: number; email: string; name: string } | null>(null);
@@ -44,6 +52,9 @@ export default function Dashboard() {
   const [boardUsers, setBoardUsers] = useState<
   { id: number; name: string; email: string; role: string }[]
   >([]);
+  const [inviteOpen, setInviteOpen] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteRole, setInviteRole] = useState("viewer");
 
 
   useEffect(() => {
@@ -127,6 +138,29 @@ export default function Dashboard() {
     fetchBoardUsers();
     fetchData();
   }, [selectedBoard]);
+
+  const handleInviteUser = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      await axios.post(
+        `/api/boards/${selectedBoard?.boardId}/users`,
+        { email: inviteEmail, role: inviteRole },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setInviteEmail("");
+      setInviteRole("viewer");
+      setInviteOpen(false);
+  
+      // Refresh users after invite
+      const res = await axios.get(`/api/boards/${selectedBoard?.boardId}/users`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setBoardUsers(res.data.users);
+    } catch (err) {
+      console.error("Failed to invite user:", err);
+    }
+  };
+  
 
   const handleCreateBoard = async () => {
     if (!newBoardName || !user) return;
@@ -283,25 +317,59 @@ export default function Dashboard() {
   </DropdownMenu>
   </div>
   <TooltipProvider>
-        <div className="flex items-center space-x-2 mb-4">
-          {boardUsers.map((u) => (
-            <Tooltip key={u.id}>
-              <TooltipTrigger asChild>
-              <Avatar className="h-8 w-8">
-                <AvatarFallback className="bg-gray-300 text-black font-semibold">
-                  {u.name
-                    .split(" ")
-                    .map((n) => n[0])
-                    .join("")
-                    .toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
-              </TooltipTrigger>
-              <TooltipContent>{u.name} ({u.role})</TooltipContent>
-            </Tooltip>
-          ))}
-        </div>
-      </TooltipProvider>
+  <div className="flex items-center space-x-2 mb-4">
+    {boardUsers.map((u) => (
+      <Tooltip key={u.id}>
+        <TooltipTrigger asChild>
+          <Avatar className="h-8 w-8">
+            <AvatarFallback className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white font-semibold">
+              {u.name
+                .split(" ")
+                .map((n) => n[0])
+                .join("")
+                .toUpperCase()}
+            </AvatarFallback>
+          </Avatar>
+        </TooltipTrigger>
+        <TooltipContent>{u.name} ({u.role})</TooltipContent>
+      </Tooltip>
+    ))}
+
+    {/* ➕ Add User Button Avatar */}
+    <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
+      <DialogTrigger asChild>
+        <button className="h-8 w-8 rounded-full bg-black text-white flex items-center justify-center hover:bg-gray-800 transition">
+          +
+        </button>
+      </DialogTrigger>
+    </Dialog>
+  </div>
+</TooltipProvider>
+<Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
+  <DialogContent>
+    <DialogHeader>
+      <DialogTitle>Invite a User to this Board</DialogTitle>
+    </DialogHeader>
+    <Input
+      placeholder="User email"
+      value={inviteEmail}
+      onChange={(e) => setInviteEmail(e.target.value)}
+      className="mb-2"
+    />
+    <Select value={inviteRole} onValueChange={setInviteRole}>
+      <SelectTrigger className="mb-2">
+        <SelectValue placeholder="Select role" />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="owner">Owner</SelectItem>
+        <SelectItem value="editor">Editor</SelectItem>
+        <SelectItem value="viewer">Viewer</SelectItem>
+      </SelectContent>
+    </Select>
+    <Button onClick={handleInviteUser}>Send Invite</Button>
+  </DialogContent>
+</Dialog>
+
 
 
 
