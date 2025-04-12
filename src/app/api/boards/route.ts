@@ -59,11 +59,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "No token provided" }, { status: 401 });
     }
 
+    console.log("🎯 HIT POST /api/boards route");
     const token = authHeader.split(" ")[1];
     const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { userId: number };
     const { name } = await request.json();
 
     if (!name) {
+      console.warn("⚠️ Board name missing in request.");
       return NextResponse.json({ error: "Board name is required" }, { status: 400 });
     }
 
@@ -71,22 +73,43 @@ export async function POST(request: NextRequest) {
 
     try {
       await conn.beginTransaction();
+      console.log("🚀 Creating new board...");
 
-      // Insert into boards
+      // Insert board
       const [boardResult] = await conn.execute(
         "INSERT INTO boards (name) VALUES (?)",
         [name]
       );
       const boardId = (boardResult as any).insertId;
+      console.log("🆕 Board created with ID:", boardId);
 
-      // Insert into board_users
+      // Insert board_users
       const [boardUserResult] = await conn.execute(
         "INSERT INTO board_users (user_id, board_id, role) VALUES (?, ?, 'owner')",
         [decoded.userId, boardId]
       );
       const boardUserId = (boardUserResult as any).insertId;
+      console.log("👤 User assigned as owner with boardUserId:", boardUserId);
+
+      // Insert default lists with logging
+      try {
+        console.log("🧱 Inserting default lists for board:", boardId);
+        for (const listName of ["To Do", "In Progress", "Done"]) {
+          console.log(`📋 Inserting list: "${listName}"`);
+          await conn.execute(
+            "INSERT INTO lists (name, board_id) VALUES (?, ?)",
+            [listName, boardId]
+          );
+        }
+        console.log("✅ Default lists successfully inserted.");
+      } catch (listErr) {
+        console.error("❌ Failed to insert default lists:", listErr);
+        throw listErr; // ensures rollback
+      }
 
       await conn.commit();
+      console.log("✅ Board and lists committed successfully!");
+
       return NextResponse.json(
         {
           board: {
@@ -100,13 +123,13 @@ export async function POST(request: NextRequest) {
       );
     } catch (err) {
       await conn.rollback();
-      console.error("Error creating board:", err);
+      console.error("❌ Error during board creation, rolling back:", err);
       return NextResponse.json({ error: "Failed to create board" }, { status: 500 });
     } finally {
       conn.release();
     }
   } catch (err) {
-    console.error("POST /api/boards error:", err);
+    console.error("❌ POST /api/boards error:", err);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }
