@@ -44,7 +44,7 @@ export default function Dashboard() {
     { boardId: number; name: string; role: string } | null
   >(null);
   const [lists, setLists] = useState<{ id: number; name: string }[]>([]);
-  const [cards, setCards] = useState<{ id: number; board_id: number; list_id: number; title: string }[]>([]);
+  const [cards, setCards] = useState<{ id: number; board_id: number; list_id: number; title: string; description?: string;}[]>([]);
   const [error, setError] = useState<string>("");
   const [editingCard, setEditingCard] = useState<{ id: number; title: string } | null>(null);
   const [newBoardName, setNewBoardName] = useState("");
@@ -55,6 +55,9 @@ export default function Dashboard() {
   const [inviteOpen, setInviteOpen] = useState(false);
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState("viewer");
+  const [creatingCard, setCreatingCard] = useState(false);
+const [newCardTitle, setNewCardTitle] = useState("");
+const [newCardDesc, setNewCardDesc] = useState("");
 
 
   useEffect(() => {
@@ -322,7 +325,7 @@ export default function Dashboard() {
       <Tooltip key={u.id}>
         <TooltipTrigger asChild>
           <Avatar className="h-8 w-8">
-            <AvatarFallback className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white font-semibold">
+            <AvatarFallback className="bg-gradient-to-r from-gray-700 via-gray-600 to-gray-500 text-white font-semibold">
               {u.name
                 .split(" ")
                 .map((n) => n[0])
@@ -371,7 +374,70 @@ export default function Dashboard() {
 </Dialog>
 
 
+      {["Owner", "Editor"].includes(selectedBoard?.role || "") && (
+        <Button onClick={() => setCreatingCard(true)} className="mb-4">
+          + Add Card
+        </Button>
+      )}
 
+<Dialog open={creatingCard} onOpenChange={setCreatingCard}>
+  <DialogContent>
+    <DialogHeader>
+      <DialogTitle>Add a New Card</DialogTitle>
+    </DialogHeader>
+    <Input
+      placeholder="Card Title"
+      value={newCardTitle}
+      onChange={(e) => setNewCardTitle(e.target.value)}
+      className="mb-2"
+    />
+    <Input
+      placeholder="Description (optional)"
+      value={newCardDesc}
+      onChange={(e) => setNewCardDesc(e.target.value)}
+      className="mb-4"
+    />
+    <Button onClick={async () => {
+      try {
+        const token = localStorage.getItem("token");
+
+        // Find the 'To Do' list by name
+        const todoList = lists.find((l) => l.name.toLowerCase() === "to do");
+
+        if (!todoList) {
+          alert("No 'To Do' list found on this board.");
+          return;
+        }
+
+        await axios.post(
+          `/api/cards`,
+          {
+            title: newCardTitle,
+            description: newCardDesc,
+            boardId: selectedBoard?.boardId,
+            listId: todoList.id,
+          },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+
+        setNewCardTitle("");
+        setNewCardDesc("");
+        setCreatingCard(false);
+
+        // Refresh cards
+        const res = await axios.get(`/api/boards/${selectedBoard?.boardId}/cards`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setCards(res.data.cards);
+      } catch (err) {
+        console.error("Error adding card:", err);
+        setError("Failed to add card.");
+      }
+    }}>
+      Add Card
+    </Button>
+  </DialogContent>
+</Dialog>
 
       {selectedBoard && (
         <DragDropContext onDragEnd={onDragEnd}>
@@ -401,7 +467,14 @@ export default function Dashboard() {
                               className="mb-2"
                             >
                               <CardContent className="p-4 flex justify-between items-center">
-                                <span>{card.title}</span>
+                              <div className="flex flex-col">
+                                <span className="font-medium">{card.title}</span>
+                                {card.description && (
+                                  <p className="text-sm text-gray-500 mt-1 line-clamp-2">
+                                    {card.description}
+                                  </p>
+                                )}
+                              </div>
                                 <div>
                                   <Dialog>
                                     <DialogTrigger asChild>

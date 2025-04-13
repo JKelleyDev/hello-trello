@@ -37,7 +37,7 @@ export async function GET(
     }
 
     const [rows] = await pool.execute<RowDataPacket[]>(
-      "SELECT id, board_id, list_id, title FROM cards WHERE board_id = ?",
+      "SELECT id, board_id, list_id, title, description FROM cards WHERE board_id = ?",
       [boardId]
     );
 
