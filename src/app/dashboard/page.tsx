@@ -16,6 +16,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from "@/components/ui/input";
 import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
 import { LogOut } from "lucide-react";
+import { useRouter } from "next/navigation";
 import {
   Avatar,
   AvatarFallback,
@@ -58,13 +59,14 @@ export default function Dashboard() {
   const [creatingCard, setCreatingCard] = useState(false);
 const [newCardTitle, setNewCardTitle] = useState("");
 const [newCardDesc, setNewCardDesc] = useState("");
+const router = useRouter();
 
 
 
   const handleLogout = () => {
     localStorage.removeItem("user");
     localStorage.removeItem("token");
-    window.location.href = "/"; // or use router.push("/") if using next/router or next/navigation
+    router.push("/"); // or use router.push("/") if using next/router or next/navigation
   };
 
   useEffect(() => {
