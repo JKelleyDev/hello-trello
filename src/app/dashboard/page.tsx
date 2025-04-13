@@ -15,7 +15,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
-
+import { LogOut } from "lucide-react";
 import {
   Avatar,
   AvatarFallback,
@@ -59,6 +59,13 @@ export default function Dashboard() {
 const [newCardTitle, setNewCardTitle] = useState("");
 const [newCardDesc, setNewCardDesc] = useState("");
 
+
+
+  const handleLogout = () => {
+    localStorage.removeItem("user");
+    localStorage.removeItem("token");
+    window.location.href = "/"; // or use router.push("/") if using next/router or next/navigation
+  };
 
   useEffect(() => {
     const userString = localStorage.getItem("user");
@@ -259,8 +266,17 @@ const [newCardDesc, setNewCardDesc] = useState("");
   }
 
   return (
+
+
+
     <div className="min-h-screen p-8 bg-gray-100">
-      <h1 className="text-3xl font-bold mb-6">Welcome, {user.name}</h1>
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold">Welcome, {user.name}</h1>
+      <Button variant="outline" onClick={handleLogout}>
+        <LogOut className="w-4 h-4 mr-2" />
+        Log Out
+      </Button>
+      </div>
       {error && <p className="text-red-500 mb-4">{error}</p>}
 
       <div className="mb-6">
