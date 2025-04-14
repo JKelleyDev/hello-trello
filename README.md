@@ -25,8 +25,19 @@
 
 | Method | Endpoint               | Description                            |
 |--------|------------------------|----------------------------------------|
-| GET    | `/api/boards`          | Fetch all boards for the user         |
+| GET    | `/api/boards`          | Fetch all boards for the user          |
 | POST   | `/api/boards`          | Create a new board                     |
+| GET    | `/api/boards/[boardId]/cards |                                  |
+| POST   | `/api/boards/[boardId]/cards |                                  |
+| GET    | `/api/boards/[boardId]/lists |                                  |
+| POST   | `/api/boards/[boardId]/lists |                                  |
+| GET    | `/api/boards/[boardId]/users |                                  |
+| POST   | `/api/boards/[boardId]/users |                                  |
+| POST   | `/api/cards`                 |                                  |
+| PUT    | `/api/cards/[cardId]`        |                                  |
+| DELETE | `/api/cards/[cardId]`        |                                  |
+| POST   | `/api/login                  |                                  |
+
 
 ---
 
