@@ -47,14 +47,15 @@ Follow the steps below to run this project locally.
 
 3. **Set up enviromental variables**
 
-   Create a .env.local file in the root directory with the following:
+   Create a `.env.local` file in the root directory with the following:
 
-   DB_HOST: url-to-your-database.com
-   DB_USER: username 
-   DB_PASSWORD: P@$$WORD
-   DB_NAME: db-name
-   DB_PORT: 3306 (Typically 3306)
-   JWT_SECRET: Same as you have set in your app .env
+   ```env
+   DB_HOST=url-to-your-database.com
+   DB_USER=username
+   DB_PASSWORD=P@$$WORD
+   DB_NAME=db-name
+   DB_PORT=3306
+   JWT_SECRET=your-jwt-secret-key
 
 4. **Run the development server**
 
