@@ -17,6 +17,7 @@ import { Input } from "@/components/ui/input";
 import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
 import { LogOut } from "lucide-react";
 import { useRouter } from "next/navigation";
+import io from "socket.io-client"; 
 import {
   Avatar,
   AvatarFallback,
@@ -34,9 +35,59 @@ import {
   SelectItem,
   SelectValue,
 } from "@/components/ui/select";
-
+const socket = io(); // or use your Azure URL
 
 export default function Dashboard() {
+  useEffect(() => {
+    socket.on("connect", () => {
+      console.log("✅ Socket connected:", socket.id);
+    });
+  
+    socket.on("cardCreated", (newCard) => {
+      setCards((prev) => [...prev, newCard]);
+    });
+  
+    socket.on("cardDeleted", ({ cardId }) => {
+      setCards((prev) => prev.filter((card) => card.id !== cardId));
+    });
+  
+    socket.on("cardUpdated", ({ cardId, title }) => {
+      setCards((prev) =>
+        prev.map((card) =>
+          card.id === cardId ? { ...card, title } : card
+        )
+      );
+    });
+  
+    socket.on("cardMoved", ({ cardId, toListId }) => {
+      setCards((prev) =>
+        prev.map((card) =>
+          card.id === cardId ? { ...card, list_id: parseInt(toListId) } : card
+        )
+      );
+    });
+  
+    socket.on("userInvited", ({ user }) => {
+      setBoardUsers((prev) => [...prev, user]);
+    });
+  
+    socket.on("boardCreated", (newBoard) => {
+      setBoards((prev) => [...prev, { ...newBoard, role: "owner", boardUserId: newBoard.boardId }]);
+    });
+  
+    return () => {
+      socket.disconnect();
+    };
+  }, []);
+  
+  
+    const emitCardCreated = (cardData: { title: string; description: string; boardId: number | undefined; listId: number; }) => {
+      socket.emit("cardCreated", cardData);
+    };
+    
+  
+
+
   const [user, setUser] = useState<{ id: number; email: string; name: string } | null>(null);
   const [boards, setBoards] = useState<
     { boardUserId: number; boardId: number; name: string; role: string }[]
@@ -438,6 +489,14 @@ const router = useRouter();
           { headers: { Authorization: `Bearer ${token}` } }
         );
 
+        emitCardCreated({
+          title: newCardTitle,
+          description: newCardDesc,
+          boardId: selectedBoard?.boardId,
+          listId: todoList.id,
+        });
+        
+
         setNewCardTitle("");
         setNewCardDesc("");
         setCreatingCard(false);
@@ -451,6 +510,7 @@ const router = useRouter();
         console.error("Error adding card:", err);
         setError("Failed to add card.");
       }
+      
     }}>
       Add Card
     </Button>
