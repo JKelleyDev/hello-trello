@@ -19,3 +19,4 @@
 - [shadcn](https://ui.shadcn.com)
 - [Next.js](https://nextjs.org)
 - [hello-pangea/dnd](https://github.com/hello-pangea/dnd)
+- [Azure Static Web APP](https://learn.microsoft.com/en-us/azure/static-web-apps/)
