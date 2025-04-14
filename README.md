@@ -9,6 +9,6 @@
 ## Dependencies
 
 - `socket.io` – Real-time communication support
-- shadcn - UI Components
-- TailwindCSS - CSS Styling
-- pangea/dnd - For drag and drop components 
+- `shadcn` - UI Components
+- `TailwindCSS` - CSS Styling
+- `pangea/dnd` - For drag and drop components 
