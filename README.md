@@ -13,13 +13,20 @@
 - `TailwindCSS` – CSS Styling  
 - `hello-pangea/dnd` – Drag and drop components  
 
-### Resources
+## Resources
 
 - [Socket.IO](https://socket.io/how-to/use-with-nextjs)  
 - [shadcn](https://ui.shadcn.com)  
 - [Next.js](https://nextjs.org)  
 - [hello-pangea/dnd](https://github.com/hello-pangea/dnd)  
 - [Azure Static Web Apps](https://learn.microsoft.com/en-us/azure/static-web-apps/)  
+
+## API Routes
+
+| Method | Endpoint               | Description                            |
+|--------|------------------------|----------------------------------------|
+| GET    | `/api/boards`          | Fetch all boards for the user         |
+| POST   | `/api/boards`          | Create a new board                     |
 
 ---
 
