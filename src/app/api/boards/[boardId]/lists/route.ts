@@ -15,7 +15,9 @@ export async function GET(
     }
 
     const token = authHeader.split(" ")[1];
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { userId: number };
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as {
+      userId: number;
+    };
 
     // Await the Promise-wrapped params to extract boardId
     const resolvedParams = await context.params;
@@ -30,7 +32,10 @@ export async function GET(
       [decoded.userId, boardId]
     );
     if (!accessCheck || accessCheck.length === 0) {
-      return NextResponse.json({ error: "Unauthorized access to this board" }, { status: 403 });
+      return NextResponse.json(
+        { error: "Unauthorized access to this board" },
+        { status: 403 }
+      );
     }
 
     // Fetch lists for the board
@@ -50,9 +55,15 @@ export async function GET(
       stack: err instanceof Error ? err.stack : undefined,
     });
     if (err instanceof jwt.JsonWebTokenError) {
-      return NextResponse.json({ error: "Invalid or expired token" }, { status: 401 });
+      return NextResponse.json(
+        { error: "Invalid or expired token" },
+        { status: 401 }
+      );
     }
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
   }
 }
 
@@ -64,11 +75,16 @@ export async function POST(request: NextRequest) {
     }
 
     const token = authHeader.split(" ")[1];
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { userId: number };
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as {
+      userId: number;
+    };
     const { name } = await request.json();
 
     if (!name) {
-      return NextResponse.json({ error: "Board name is required" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Board name is required" },
+        { status: 400 }
+      );
     }
 
     const conn = await pool.getConnection();
@@ -115,7 +131,10 @@ export async function POST(request: NextRequest) {
     } catch (err) {
       await conn.rollback();
       console.error("Error creating board and lists:", err);
-      return NextResponse.json({ error: "Failed to create board" }, { status: 500 });
+      return NextResponse.json(
+        { error: "Failed to create board" },
+        { status: 500 }
+      );
     } finally {
       conn.release();
     }

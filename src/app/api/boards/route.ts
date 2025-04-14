@@ -12,7 +12,9 @@ export async function GET(request: NextRequest) {
     }
 
     const token = authHeader.split(" ")[1];
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { userId: number };
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as {
+      userId: number;
+    };
 
     // Query board_users joined with boards for the user's boards
     const [rows] = await pool.execute<RowDataPacket[]>(
@@ -46,9 +48,15 @@ export async function GET(request: NextRequest) {
       stack: err instanceof Error ? err.stack : undefined,
     });
     if (err instanceof jwt.JsonWebTokenError) {
-      return NextResponse.json({ error: "Invalid or expired token" }, { status: 401 });
+      return NextResponse.json(
+        { error: "Invalid or expired token" },
+        { status: 401 }
+      );
     }
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
   }
 }
 
@@ -61,12 +69,17 @@ export async function POST(request: NextRequest) {
 
     console.log("🎯 HIT POST /api/boards route");
     const token = authHeader.split(" ")[1];
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { userId: number };
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as {
+      userId: number;
+    };
     const { name } = await request.json();
 
     if (!name) {
       console.warn("⚠️ Board name missing in request.");
-      return NextResponse.json({ error: "Board name is required" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Board name is required" },
+        { status: 400 }
+      );
     }
 
     const conn = await pool.getConnection();
@@ -93,22 +106,22 @@ export async function POST(request: NextRequest) {
 
       // Insert default lists with logging
       try {
-        console.log("🧱 Inserting default lists for board:", boardId);
+        console.log("Inserting default lists for board:", boardId);
         for (const listName of ["To Do", "In Progress", "Done"]) {
-          console.log(`📋 Inserting list: "${listName}"`);
+          console.log(`Inserting list: "${listName}"`);
           await conn.execute(
             "INSERT INTO lists (name, board_id) VALUES (?, ?)",
             [listName, boardId]
           );
         }
-        console.log("✅ Default lists successfully inserted.");
+        console.log("Default lists successfully inserted.");
       } catch (listErr) {
-        console.error("❌ Failed to insert default lists:", listErr);
+        console.error("Failed to insert default lists:", listErr);
         throw listErr; // ensures rollback
       }
 
       await conn.commit();
-      console.log("✅ Board and lists committed successfully!");
+      console.log("Board and lists committed successfully!");
 
       return NextResponse.json(
         {
@@ -123,13 +136,16 @@ export async function POST(request: NextRequest) {
       );
     } catch (err) {
       await conn.rollback();
-      console.error("❌ Error during board creation, rolling back:", err);
-      return NextResponse.json({ error: "Failed to create board" }, { status: 500 });
+      console.error("Error during board creation, rolling back:", err);
+      return NextResponse.json(
+        { error: "Failed to create board" },
+        { status: 500 }
+      );
     } finally {
       conn.release();
     }
   } catch (err) {
-    console.error("❌ POST /api/boards error:", err);
+    console.error("POST /api/boards error:", err);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }

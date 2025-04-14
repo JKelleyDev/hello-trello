@@ -26,14 +26,22 @@ export async function GET(
     }
 
     const token = authHeader.split(" ")[1];
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { userId: number };
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as {
+      userId: number;
+    };
 
     const [accessCheck] = await pool.execute<RowDataPacket[]>(
       "SELECT 1 FROM board_users WHERE user_id = ? AND board_id = ?",
       [decoded.userId, boardId]
     );
-    if (!accessCheck || (Array.isArray(accessCheck) && accessCheck.length === 0)) {
-      return NextResponse.json({ error: "Unauthorized access to this board" }, { status: 403 });
+    if (
+      !accessCheck ||
+      (Array.isArray(accessCheck) && accessCheck.length === 0)
+    ) {
+      return NextResponse.json(
+        { error: "Unauthorized access to this board" },
+        { status: 403 }
+      );
     }
 
     const [rows] = await pool.execute<RowDataPacket[]>(
@@ -48,9 +56,15 @@ export async function GET(
       stack: err instanceof Error ? err.stack : undefined,
     });
     if (err instanceof jwt.JsonWebTokenError) {
-      return NextResponse.json({ error: "Invalid or expired token" }, { status: 401 });
+      return NextResponse.json(
+        { error: "Invalid or expired token" },
+        { status: 401 }
+      );
     }
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
   }
 }
 
@@ -74,22 +88,36 @@ export async function POST(
     }
 
     const token = authHeader.split(" ")[1];
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { userId: number };
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as {
+      userId: number;
+    };
 
     const { title, listId } = await request.json();
     if (!title || !listId) {
-      return NextResponse.json({ error: "Title and listId are required" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Title and listId are required" },
+        { status: 400 }
+      );
     }
 
     const [accessCheck] = await pool.execute<RowDataPacket[]>(
       "SELECT role FROM board_users WHERE user_id = ? AND board_id = ?",
       [decoded.userId, boardId]
     );
-    if (!accessCheck || (Array.isArray(accessCheck) && accessCheck.length === 0)) {
-      return NextResponse.json({ error: "Unauthorized access to this board" }, { status: 403 });
+    if (
+      !accessCheck ||
+      (Array.isArray(accessCheck) && accessCheck.length === 0)
+    ) {
+      return NextResponse.json(
+        { error: "Unauthorized access to this board" },
+        { status: 403 }
+      );
     }
     if (accessCheck[0].role === "Viewer") {
-      return NextResponse.json({ error: "Viewers cannot create cards" }, { status: 403 });
+      return NextResponse.json(
+        { error: "Viewers cannot create cards" },
+        { status: 403 }
+      );
     }
 
     const [result] = await pool.execute(
@@ -109,8 +137,14 @@ export async function POST(
       stack: err instanceof Error ? err.stack : undefined,
     });
     if (err instanceof jwt.JsonWebTokenError) {
-      return NextResponse.json({ error: "Invalid or expired token" }, { status: 401 });
+      return NextResponse.json(
+        { error: "Invalid or expired token" },
+        { status: 401 }
+      );
     }
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
   }
 }

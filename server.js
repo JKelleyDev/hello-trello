@@ -16,31 +16,31 @@ app.prepare().then(() => {
 
   io.on("connection", (socket) => {
     console.log("User connected:", socket.id);
-  
+
     socket.on("cardCreated", (data) => {
       socket.broadcast.emit("cardCreated", data);
     });
-  
+
     socket.on("cardDeleted", (data) => {
       socket.broadcast.emit("cardDeleted", data);
     });
-  
+
     socket.on("cardUpdated", (data) => {
       socket.broadcast.emit("cardUpdated", data);
     });
-  
+
     socket.on("cardMoved", (data) => {
       socket.broadcast.emit("cardMoved", data);
     });
-  
+
     socket.on("boardCreated", (data) => {
       socket.broadcast.emit("boardCreated", data);
     });
-  
+
     socket.on("userInvited", (data) => {
       socket.broadcast.emit("userInvited", data);
     });
-  
+
     socket.on("disconnect", () => {
       console.log("User disconnected:", socket.id);
     });

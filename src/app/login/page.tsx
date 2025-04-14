@@ -16,7 +16,8 @@ export default function Login() {
   const router = useRouter();
 
   // Environment variable for API URL
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api";
+  const API_URL =
+    process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api";
 
   // Typing effect
   useEffect(() => {
@@ -85,12 +86,12 @@ export default function Login() {
             Login
           </Button>
         </form>
-      
+
         <div className="mt-4 text-center">
           <Link href="/create-account">
-            <Button variant="outline" className="w-full"> 
+            <Button variant="outline" className="w-full">
               Create Account
-            </Button> 
+            </Button>
           </Link>
         </div>
       </div>

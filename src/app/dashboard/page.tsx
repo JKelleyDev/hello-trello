@@ -12,16 +12,24 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
+import {
+  DragDropContext,
+  Droppable,
+  Draggable,
+  DropResult,
+} from "@hello-pangea/dnd";
 import { LogOut } from "lucide-react";
 import { useRouter } from "next/navigation";
-import io from "socket.io-client"; 
-import {
-  Avatar,
-  AvatarFallback,
-} from "@/components/ui/avatar";
+import io from "socket.io-client";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   Tooltip,
   TooltipContent,
@@ -42,23 +50,21 @@ export default function Dashboard() {
     socket.on("connect", () => {
       console.log("✅ Socket connected:", socket.id);
     });
-  
+
     socket.on("cardCreated", (newCard) => {
       setCards((prev) => [...prev, newCard]);
     });
-  
+
     socket.on("cardDeleted", ({ cardId }) => {
       setCards((prev) => prev.filter((card) => card.id !== cardId));
     });
-  
+
     socket.on("cardUpdated", ({ cardId, title }) => {
       setCards((prev) =>
-        prev.map((card) =>
-          card.id === cardId ? { ...card, title } : card
-        )
+        prev.map((card) => (card.id === cardId ? { ...card, title } : card))
       );
     });
-  
+
     socket.on("cardMoved", ({ cardId, toListId }) => {
       setCards((prev) =>
         prev.map((card) =>
@@ -66,53 +72,72 @@ export default function Dashboard() {
         )
       );
     });
-  
+
     socket.on("userInvited", ({ user }) => {
       setBoardUsers((prev) => [...prev, user]);
     });
-  
+
     socket.on("boardCreated", (newBoard) => {
-      setBoards((prev) => [...prev, { ...newBoard, role: "owner", boardUserId: newBoard.boardId }]);
+      setBoards((prev) => [
+        ...prev,
+        { ...newBoard, role: "owner", boardUserId: newBoard.boardId },
+      ]);
     });
-  
+
     return () => {
       socket.disconnect();
     };
   }, []);
-  
-  
-    const emitCardCreated = (cardData: { title: string; description: string; boardId: number | undefined; listId: number; }) => {
-      socket.emit("cardCreated", cardData);
-    };
-    
-  
 
+  const emitCardCreated = (cardData: {
+    title: string;
+    description: string;
+    boardId: number | undefined;
+    listId: number;
+  }) => {
+    socket.emit("cardCreated", cardData);
+  };
 
-  const [user, setUser] = useState<{ id: number; email: string; name: string } | null>(null);
+  const [user, setUser] = useState<{
+    id: number;
+    email: string;
+    name: string;
+  } | null>(null);
   const [boards, setBoards] = useState<
     { boardUserId: number; boardId: number; name: string; role: string }[]
   >([]);
-  const [selectedBoard, setSelectedBoard] = useState<
-    { boardId: number; name: string; role: string } | null
-  >(null);
+  const [selectedBoard, setSelectedBoard] = useState<{
+    boardId: number;
+    name: string;
+    role: string;
+  } | null>(null);
   const [lists, setLists] = useState<{ id: number; name: string }[]>([]);
-  const [cards, setCards] = useState<{ id: number; board_id: number; list_id: number; title: string; description?: string;}[]>([]);
+  const [cards, setCards] = useState<
+    {
+      id: number;
+      board_id: number;
+      list_id: number;
+      title: string;
+      description?: string;
+    }[]
+  >([]);
   const [error, setError] = useState<string>("");
-  const [editingCard, setEditingCard] = useState<{ id: number; title: string } | null>(null);
+  const [editingCard, setEditingCard] = useState<{
+    id: number;
+    title: string;
+  } | null>(null);
   const [newBoardName, setNewBoardName] = useState("");
   const [creatingBoard, setCreatingBoard] = useState(false);
   const [boardUsers, setBoardUsers] = useState<
-  { id: number; name: string; email: string; role: string }[]
+    { id: number; name: string; email: string; role: string }[]
   >([]);
   const [inviteOpen, setInviteOpen] = useState(false);
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState("viewer");
   const [creatingCard, setCreatingCard] = useState(false);
-const [newCardTitle, setNewCardTitle] = useState("");
-const [newCardDesc, setNewCardDesc] = useState("");
-const router = useRouter();
-
-
+  const [newCardTitle, setNewCardTitle] = useState("");
+  const [newCardDesc, setNewCardDesc] = useState("");
+  const router = useRouter();
 
   const handleLogout = () => {
     localStorage.removeItem("user");
@@ -190,9 +215,12 @@ const router = useRouter();
     const fetchBoardUsers = async () => {
       try {
         const token = localStorage.getItem("token");
-        const res = await axios.get(`/api/boards/${selectedBoard.boardId}/users`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const res = await axios.get(
+          `/api/boards/${selectedBoard.boardId}/users`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
         setBoardUsers(res.data.users);
       } catch (err) {
         console.error("Failed to fetch board users:", err);
@@ -213,21 +241,23 @@ const router = useRouter();
       setInviteEmail("");
       setInviteRole("viewer");
       setInviteOpen(false);
-  
+
       // Refresh users after invite
-      const res = await axios.get(`/api/boards/${selectedBoard?.boardId}/users`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await axios.get(
+        `/api/boards/${selectedBoard?.boardId}/users`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
       setBoardUsers(res.data.users);
     } catch (err) {
       console.error("Failed to invite user:", err);
     }
   };
-  
 
   const handleCreateBoard = async () => {
     if (!newBoardName || !user) return;
-  
+
     try {
       const token = localStorage.getItem("token");
       const response = await axios.post(
@@ -235,37 +265,41 @@ const router = useRouter();
         { name: newBoardName },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-  
+
       const newBoard = response.data.board;
-  
-      const updatedBoards = [...boards, { ...newBoard, boardUserId: newBoard.boardUserId, role: "owner" }];
+
+      const updatedBoards = [
+        ...boards,
+        { ...newBoard, boardUserId: newBoard.boardUserId, role: "owner" },
+      ];
       setBoards(updatedBoards);
       setSelectedBoard({
         boardId: newBoard.boardId,
         name: newBoard.name,
         role: "owner",
       });
-  
+
       setNewBoardName("");
       setCreatingBoard(false);
     } catch (err: any) {
       console.error("Error creating board:", err);
       setError(err.response?.data?.error || "Failed to create board.");
     }
-
-
   };
-  
 
   const onDragEnd = async (result: DropResult) => {
     const { source, destination } = result;
     if (!destination || source.droppableId === destination.droppableId) return;
 
-    const movedCard = cards.find((card) => card.id === parseInt(result.draggableId));
+    const movedCard = cards.find(
+      (card) => card.id === parseInt(result.draggableId)
+    );
     if (!movedCard) return;
 
     const updatedCards = cards.map((card) =>
-      card.id === movedCard.id ? { ...card, list_id: parseInt(destination.droppableId) } : card
+      card.id === movedCard.id
+        ? { ...card, list_id: parseInt(destination.droppableId) }
+        : card
     );
     setCards(updatedCards);
 
@@ -293,7 +327,13 @@ const router = useRouter();
         { title: editingCard.title },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      setCards(cards.map((card) => (card.id === editingCard.id ? { ...card, title: editingCard.title } : card)));
+      setCards(
+        cards.map((card) =>
+          card.id === editingCard.id
+            ? { ...card, title: editingCard.title }
+            : card
+        )
+      );
       setEditingCard(null);
     } catch (err) {
       console.error("Error editing card:", err);
@@ -319,129 +359,127 @@ const router = useRouter();
   }
 
   return (
-
-
-
     <div className="min-h-screen p-8 bg-gray-100">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">Welcome, {user.name}</h1>
-      <Button variant="outline" onClick={handleLogout}>
-        <LogOut className="w-4 h-4 mr-2" />
-        Log Out
-      </Button>
+        <Button variant="outline" onClick={handleLogout}>
+          <LogOut className="w-4 h-4 mr-2" />
+          Log Out
+        </Button>
       </div>
       {error && <p className="text-red-500 mb-4">{error}</p>}
 
       <div className="mb-6">
-     
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline">
+              {selectedBoard
+                ? `${selectedBoard.name} (${selectedBoard.role})`
+                : "Select a Board"}
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            <DropdownMenuLabel>Your Boards</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            {boards.length > 0 ? (
+              boards.map((board) => (
+                <DropdownMenuItem
+                  key={board.boardUserId}
+                  onClick={() =>
+                    setSelectedBoard({
+                      boardId: board.boardId,
+                      name: board.name,
+                      role: board.role,
+                    })
+                  }
+                >
+                  {board.name} ({board.role})
+                </DropdownMenuItem>
+              ))
+            ) : (
+              <DropdownMenuItem disabled>No boards found</DropdownMenuItem>
+            )}
+            <DropdownMenuSeparator />
 
-  <DropdownMenu>
-    <DropdownMenuTrigger asChild>
-      <Button variant="outline">
-        {selectedBoard ? `${selectedBoard.name} (${selectedBoard.role})` : "Select a Board"}
-      </Button>
-    </DropdownMenuTrigger>
-    <DropdownMenuContent>
-      <DropdownMenuLabel>Your Boards</DropdownMenuLabel>
-      <DropdownMenuSeparator />
-      {boards.length > 0 ? (
-        boards.map((board) => (
-          <DropdownMenuItem
-            key={board.boardUserId}
-            onClick={() =>
-              setSelectedBoard({
-                boardId: board.boardId,
-                name: board.name,
-                role: board.role,
-              })
-            }
-          >
-            {board.name} ({board.role})
-          </DropdownMenuItem>
-        ))
-      ) : (
-        <DropdownMenuItem disabled>No boards found</DropdownMenuItem>
-      )}
-      <DropdownMenuSeparator />
+            {/* Create Board Dialog Trigger */}
+            <Dialog open={creatingBoard} onOpenChange={setCreatingBoard}>
+              <DialogTrigger asChild>
+                <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                  Create Board
+                </DropdownMenuItem>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Create New Board</DialogTitle>
+                </DialogHeader>
+                <Input
+                  placeholder="Board Name"
+                  value={newBoardName}
+                  onChange={(e) => setNewBoardName(e.target.value)}
+                />
+                <Button onClick={handleCreateBoard} className="mt-2">
+                  Create
+                </Button>
+              </DialogContent>
+            </Dialog>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+      <TooltipProvider>
+        <div className="flex items-center space-x-2 mb-4">
+          {boardUsers.map((u) => (
+            <Tooltip key={u.id}>
+              <TooltipTrigger asChild>
+                <Avatar className="h-8 w-8">
+                  <AvatarFallback className="bg-gradient-to-r from-gray-700 via-gray-600 to-gray-500 text-white font-semibold">
+                    {u.name
+                      .split(" ")
+                      .map((n) => n[0])
+                      .join("")
+                      .toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+              </TooltipTrigger>
+              <TooltipContent>
+                {u.name} ({u.role})
+              </TooltipContent>
+            </Tooltip>
+          ))}
 
-      {/* Create Board Dialog Trigger */}
-      <Dialog open={creatingBoard} onOpenChange={setCreatingBoard}>
-        <DialogTrigger asChild>
-          <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-            Create Board
-          </DropdownMenuItem>
-        </DialogTrigger>
+          {/* ➕ Add User Button Avatar */}
+          <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
+            <DialogTrigger asChild>
+              <button className="h-8 w-8 rounded-full bg-black text-white flex items-center justify-center hover:bg-gray-800 transition">
+                +
+              </button>
+            </DialogTrigger>
+          </Dialog>
+        </div>
+      </TooltipProvider>
+      <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Create New Board</DialogTitle>
+            <DialogTitle>Invite a User to this Board</DialogTitle>
           </DialogHeader>
           <Input
-            placeholder="Board Name"
-            value={newBoardName}
-            onChange={(e) => setNewBoardName(e.target.value)}
+            placeholder="User email"
+            value={inviteEmail}
+            onChange={(e) => setInviteEmail(e.target.value)}
+            className="mb-2"
           />
-          <Button onClick={handleCreateBoard} className="mt-2">
-            Create
-          </Button>
+          <Select value={inviteRole} onValueChange={setInviteRole}>
+            <SelectTrigger className="mb-2">
+              <SelectValue placeholder="Select role" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="owner">Owner</SelectItem>
+              <SelectItem value="editor">Editor</SelectItem>
+              <SelectItem value="viewer">Viewer</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button onClick={handleInviteUser}>Send Invite</Button>
         </DialogContent>
       </Dialog>
-    </DropdownMenuContent>
-  </DropdownMenu>
-  </div>
-  <TooltipProvider>
-  <div className="flex items-center space-x-2 mb-4">
-    {boardUsers.map((u) => (
-      <Tooltip key={u.id}>
-        <TooltipTrigger asChild>
-          <Avatar className="h-8 w-8">
-            <AvatarFallback className="bg-gradient-to-r from-gray-700 via-gray-600 to-gray-500 text-white font-semibold">
-              {u.name
-                .split(" ")
-                .map((n) => n[0])
-                .join("")
-                .toUpperCase()}
-            </AvatarFallback>
-          </Avatar>
-        </TooltipTrigger>
-        <TooltipContent>{u.name} ({u.role})</TooltipContent>
-      </Tooltip>
-    ))}
-
-    {/* ➕ Add User Button Avatar */}
-    <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
-      <DialogTrigger asChild>
-        <button className="h-8 w-8 rounded-full bg-black text-white flex items-center justify-center hover:bg-gray-800 transition">
-          +
-        </button>
-      </DialogTrigger>
-    </Dialog>
-  </div>
-</TooltipProvider>
-<Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
-  <DialogContent>
-    <DialogHeader>
-      <DialogTitle>Invite a User to this Board</DialogTitle>
-    </DialogHeader>
-    <Input
-      placeholder="User email"
-      value={inviteEmail}
-      onChange={(e) => setInviteEmail(e.target.value)}
-      className="mb-2"
-    />
-    <Select value={inviteRole} onValueChange={setInviteRole}>
-      <SelectTrigger className="mb-2">
-        <SelectValue placeholder="Select role" />
-      </SelectTrigger>
-      <SelectContent>
-        <SelectItem value="owner">Owner</SelectItem>
-        <SelectItem value="editor">Editor</SelectItem>
-        <SelectItem value="viewer">Viewer</SelectItem>
-      </SelectContent>
-    </Select>
-    <Button onClick={handleInviteUser}>Send Invite</Button>
-  </DialogContent>
-</Dialog>
-
 
       {["Owner", "Editor"].includes(selectedBoard?.role || "") && (
         <Button onClick={() => setCreatingCard(true)} className="mb-4">
@@ -449,73 +487,78 @@ const router = useRouter();
         </Button>
       )}
 
-<Dialog open={creatingCard} onOpenChange={setCreatingCard}>
-  <DialogContent>
-    <DialogHeader>
-      <DialogTitle>Add a New Card</DialogTitle>
-    </DialogHeader>
-    <Input
-      placeholder="Card Title"
-      value={newCardTitle}
-      onChange={(e) => setNewCardTitle(e.target.value)}
-      className="mb-2"
-    />
-    <Input
-      placeholder="Description (optional)"
-      value={newCardDesc}
-      onChange={(e) => setNewCardDesc(e.target.value)}
-      className="mb-4"
-    />
-    <Button onClick={async () => {
-      try {
-        const token = localStorage.getItem("token");
+      <Dialog open={creatingCard} onOpenChange={setCreatingCard}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add a New Card</DialogTitle>
+          </DialogHeader>
+          <Input
+            placeholder="Card Title"
+            value={newCardTitle}
+            onChange={(e) => setNewCardTitle(e.target.value)}
+            className="mb-2"
+          />
+          <Input
+            placeholder="Description (optional)"
+            value={newCardDesc}
+            onChange={(e) => setNewCardDesc(e.target.value)}
+            className="mb-4"
+          />
+          <Button
+            onClick={async () => {
+              try {
+                const token = localStorage.getItem("token");
 
-        // Find the 'To Do' list by name
-        const todoList = lists.find((l) => l.name.toLowerCase() === "to do");
+                // Find the 'To Do' list by name
+                const todoList = lists.find(
+                  (l) => l.name.toLowerCase() === "to do"
+                );
 
-        if (!todoList) {
-          alert("No 'To Do' list found on this board.");
-          return;
-        }
+                if (!todoList) {
+                  alert("No 'To Do' list found on this board.");
+                  return;
+                }
 
-        await axios.post(
-          `/api/cards`,
-          {
-            title: newCardTitle,
-            description: newCardDesc,
-            boardId: selectedBoard?.boardId,
-            listId: todoList.id,
-          },
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
+                await axios.post(
+                  `/api/cards`,
+                  {
+                    title: newCardTitle,
+                    description: newCardDesc,
+                    boardId: selectedBoard?.boardId,
+                    listId: todoList.id,
+                  },
+                  { headers: { Authorization: `Bearer ${token}` } }
+                );
 
-        emitCardCreated({
-          title: newCardTitle,
-          description: newCardDesc,
-          boardId: selectedBoard?.boardId,
-          listId: todoList.id,
-        });
-        
+                emitCardCreated({
+                  title: newCardTitle,
+                  description: newCardDesc,
+                  boardId: selectedBoard?.boardId,
+                  listId: todoList.id,
+                });
 
-        setNewCardTitle("");
-        setNewCardDesc("");
-        setCreatingCard(false);
+                setNewCardTitle("");
+                setNewCardDesc("");
+                setCreatingCard(false);
 
-        // Refresh cards
-        const res = await axios.get(`/api/boards/${selectedBoard?.boardId}/cards`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        setCards(res.data.cards);
-      } catch (err) {
-        console.error("Error adding card:", err);
-        setError("Failed to add card.");
-      }
-      
-    }}>
-      Add Card
-    </Button>
-  </DialogContent>
-</Dialog>
+                // Refresh cards
+                const res = await axios.get(
+                  `/api/boards/${selectedBoard?.boardId}/cards`,
+                  {
+                    headers: { Authorization: `Bearer ${token}` },
+                  }
+                );
+                setCards(res.data.cards);
+              } catch (err) {
+                console.error("Error adding card:", err);
+                setError("Failed to add card.");
+              }
+            }}
+          >
+            Add Card
+          </Button>
+        </DialogContent>
+      </Dialog>
 
       {selectedBoard && (
         <DragDropContext onDragEnd={onDragEnd}>
@@ -545,14 +588,16 @@ const router = useRouter();
                               className="mb-2"
                             >
                               <CardContent className="p-4 flex justify-between items-center">
-                              <div className="flex flex-col">
-                                <span className="font-medium">{card.title}</span>
-                                {card.description && (
-                                  <p className="text-sm text-gray-500 mt-1 line-clamp-2">
-                                    {card.description}
-                                  </p>
-                                )}
-                              </div>
+                                <div className="flex flex-col">
+                                  <span className="font-medium">
+                                    {card.title}
+                                  </span>
+                                  {card.description && (
+                                    <p className="text-sm text-gray-500 mt-1 line-clamp-2">
+                                      {card.description}
+                                    </p>
+                                  )}
+                                </div>
                                 <div>
                                   <Dialog>
                                     <DialogTrigger asChild>
@@ -560,7 +605,12 @@ const router = useRouter();
                                         variant="outline"
                                         size="sm"
                                         className="mr-2"
-                                        onClick={() => setEditingCard({ id: card.id, title: card.title })}
+                                        onClick={() =>
+                                          setEditingCard({
+                                            id: card.id,
+                                            title: card.title,
+                                          })
+                                        }
                                       >
                                         Edit
                                       </Button>
@@ -573,12 +623,19 @@ const router = useRouter();
                                         value={editingCard?.title || ""}
                                         onChange={(e) =>
                                           setEditingCard(
-                                            editingCard ? { ...editingCard, title: e.target.value } : null
+                                            editingCard
+                                              ? {
+                                                  ...editingCard,
+                                                  title: e.target.value,
+                                                }
+                                              : null
                                           )
                                         }
                                         placeholder="Card Title"
                                       />
-                                      <Button onClick={handleEditCard}>Save</Button>
+                                      <Button onClick={handleEditCard}>
+                                        Save
+                                      </Button>
                                     </DialogContent>
                                   </Dialog>
                                   <Button
@@ -594,9 +651,8 @@ const router = useRouter();
                           )}
                         </Draggable>
                       ))}
-                    {cards.filter((card) => card.list_id === list.id).length === 0 && (
-                      <div className="text-gray-500">No tasks yet</div>
-                    )}
+                    {cards.filter((card) => card.list_id === list.id).length ===
+                      0 && <div className="text-gray-500">No tasks yet</div>}
                     {provided.placeholder}
                   </div>
                 )}

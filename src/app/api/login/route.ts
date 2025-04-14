@@ -9,7 +9,14 @@ export async function POST(request: NextRequest) {
     const { email, password } = await request.json();
 
     // Validate environment variables
-    const requiredEnvVars = ["DB_HOST", "DB_USER", "DB_PASSWORD", "DB_NAME", "DB_PORT", "JWT_SECRET"];
+    const requiredEnvVars = [
+      "DB_HOST",
+      "DB_USER",
+      "DB_PASSWORD",
+      "DB_NAME",
+      "DB_PORT",
+      "JWT_SECRET",
+    ];
     for (const envVar of requiredEnvVars) {
       if (!process.env[envVar]) {
         throw new Error(`${envVar} is not defined`);
@@ -49,7 +56,8 @@ export async function POST(request: NextRequest) {
       message: err instanceof Error ? err.message : "Unknown error",
       stack: err instanceof Error ? err.stack : undefined,
     });
-    const errorMessage = err instanceof Error ? err.message : "Internal server error";
+    const errorMessage =
+      err instanceof Error ? err.message : "Internal server error";
     return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }
