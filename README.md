@@ -12,3 +12,9 @@
 - `shadcn` - UI Components
 - `TailwindCSS` - CSS Styling
 - `pangea/dnd` - For drag and drop components 
+
+### Resources 
+
+- [Socket IO](https://socket.io/how-to/use-with-nextjs)
+- [shadcn](https://ui.shadcn.com)
+- [Next.js](https://nextjs.org)
