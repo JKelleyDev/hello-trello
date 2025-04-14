@@ -11,7 +11,12 @@
 - `socket.io` – Real-time communication support  
 - `shadcn` – UI Components  
 - `TailwindCSS` – CSS Styling  
-- `hello-pangea/dnd` – Drag and drop components  
+- `hello-pangea/dnd` – Drag and drop components
+- `mysql2` - used for database connection / communication with MySQL db
+- `axios` - used for making http request to api routes
+- `jsonwebtoken (JWT)` - used to store user token on local storage for app authenication throughout use. Set for 1 hour exp.
+- `react-dom` - allows for the UI to be rendered for client pages
+- `lucid-react` - An icon library, so far just used for logout button icon
 
 ## Resources
 
