@@ -43,7 +43,18 @@
 | DELETE | `/api/cards/[cardId]`        |                                  |
 | POST   | `/api/login`                  |                                  |
 
+## Socket.IO Events
 
+### Client-to-Server Events
+
+| Event Name    | Description                                         | Payload         |
+|---------------|-----------------------------------------------------|-----------------|
+| `cardCreated` | Triggered after a new card is added by a user. Informs other clients to refresh cards. | _None_ |
+
+```ts
+// Emit after creating a card
+socket.emit("cardCreated");
+```
 ---
 
 ## Local Development
