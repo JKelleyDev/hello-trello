@@ -43,61 +43,10 @@ import {
   SelectItem,
   SelectValue,
 } from "@/components/ui/select";
-//const socket = io(); 
+
 const socket = io(); 
+
 export default function Dashboard() {
-
-  // useEffect(() => {
-  //   socket.on("connect", () => {
-  //     console.log("Socket connected:", socket.id);
-  //   });
-
-  //   socket.on("cardCreated", (newCard) => {
-  //     setCards((prev) => [...prev, newCard]);
-  //   });
-
-  //   socket.on("cardDeleted", ({ cardId }) => {
-  //     setCards((prev) => prev.filter((card) => card.id !== cardId));
-  //   });
-
-  //   socket.on("cardUpdated", ({ cardId, title }) => {
-  //     setCards((prev) =>
-  //       prev.map((card) => (card.id === cardId ? { ...card, title } : card))
-  //     );
-  //   });
-
-  //   socket.on("cardMoved", ({ cardId, toListId }) => {
-  //     setCards((prev) =>
-  //       prev.map((card) =>
-  //         card.id === cardId ? { ...card, list_id: parseInt(toListId) } : card
-  //       )
-  //     );
-  //   });
-
-  //   socket.on("userInvited", ({ user }) => {
-  //     setBoardUsers((prev) => [...prev, user]);
-  //   });
-
-  //   socket.on("boardCreated", (newBoard) => {
-  //     setBoards((prev) => [
-  //       ...prev,
-  //       { ...newBoard, role: "owner", boardUserId: newBoard.boardId },
-  //     ]);
-  //   });
-
-  //   return () => {
-  //     socket.disconnect();
-  //   };
-  // }, []);
-
-  // const emitCardCreated = (cardData: {
-  //   title: string;
-  //   description: string;
-  //   boardId: number | undefined;
-  //   listId: number;
-  // }) => {
-  //   socket.emit("cardCreated", cardData);
-  // };
 
   const [user, setUser] = useState<{
     id: number;
