@@ -5,44 +5,29 @@ import { Server } from "socket.io";
 const dev = process.env.NODE_ENV !== "production";
 const hostname = "localhost";
 const port = 3000;
-// when using middleware `hostname` and `port` must be provided below
 const app = next({ dev, hostname, port });
 const handler = app.getRequestHandler();
 
 app.prepare().then(() => {
   const httpServer = createServer(handler);
 
-  const io = new Server(httpServer);
+  const io = new Server(httpServer, {
+    cors: {
+      origin: "*", // Set this to your frontend URL in production
+      methods: ["GET", "POST"]
+    },
+  });
 
   io.on("connection", (socket) => {
-    console.log("User connected:", socket.id);
+    console.log("Socket connected:", socket.id);
 
-    socket.on("cardCreated", (data) => {
-      socket.broadcast.emit("cardCreated", data);
-    });
-
-    socket.on("cardDeleted", (data) => {
-      socket.broadcast.emit("cardDeleted", data);
-    });
-
-    socket.on("cardUpdated", (data) => {
-      socket.broadcast.emit("cardUpdated", data);
-    });
-
-    socket.on("cardMoved", (data) => {
-      socket.broadcast.emit("cardMoved", data);
-    });
-
-    socket.on("boardCreated", (data) => {
-      socket.broadcast.emit("boardCreated", data);
-    });
-
-    socket.on("userInvited", (data) => {
-      socket.broadcast.emit("userInvited", data);
+    socket.on("cardCreated", () => {
+      console.log("cardCreated received");
+      socket.broadcast.emit("cardCreated"); // broadcast without data
     });
 
     socket.on("disconnect", () => {
-      console.log("User disconnected:", socket.id);
+      console.log("Socket disconnected:", socket.id);
     });
   });
 

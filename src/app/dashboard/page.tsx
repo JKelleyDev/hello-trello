@@ -1,6 +1,6 @@
 "use client"; // Client Component
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, use } from "react";
 import axios from "axios";
 import {
   DropdownMenu,
@@ -26,7 +26,7 @@ import {
   Draggable,
   DropResult,
 } from "@hello-pangea/dnd";
-import { LogOut } from "lucide-react";
+import { LogOut, Settings } from "lucide-react";
 import { useRouter } from "next/navigation";
 import io from "socket.io-client";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -43,60 +43,61 @@ import {
   SelectItem,
   SelectValue,
 } from "@/components/ui/select";
-const socket = io(); // or use your Azure URL
-
+//const socket = io(); 
+const socket = io(); 
 export default function Dashboard() {
-  useEffect(() => {
-    socket.on("connect", () => {
-      console.log("✅ Socket connected:", socket.id);
-    });
 
-    socket.on("cardCreated", (newCard) => {
-      setCards((prev) => [...prev, newCard]);
-    });
+  // useEffect(() => {
+  //   socket.on("connect", () => {
+  //     console.log("Socket connected:", socket.id);
+  //   });
 
-    socket.on("cardDeleted", ({ cardId }) => {
-      setCards((prev) => prev.filter((card) => card.id !== cardId));
-    });
+  //   socket.on("cardCreated", (newCard) => {
+  //     setCards((prev) => [...prev, newCard]);
+  //   });
 
-    socket.on("cardUpdated", ({ cardId, title }) => {
-      setCards((prev) =>
-        prev.map((card) => (card.id === cardId ? { ...card, title } : card))
-      );
-    });
+  //   socket.on("cardDeleted", ({ cardId }) => {
+  //     setCards((prev) => prev.filter((card) => card.id !== cardId));
+  //   });
 
-    socket.on("cardMoved", ({ cardId, toListId }) => {
-      setCards((prev) =>
-        prev.map((card) =>
-          card.id === cardId ? { ...card, list_id: parseInt(toListId) } : card
-        )
-      );
-    });
+  //   socket.on("cardUpdated", ({ cardId, title }) => {
+  //     setCards((prev) =>
+  //       prev.map((card) => (card.id === cardId ? { ...card, title } : card))
+  //     );
+  //   });
 
-    socket.on("userInvited", ({ user }) => {
-      setBoardUsers((prev) => [...prev, user]);
-    });
+  //   socket.on("cardMoved", ({ cardId, toListId }) => {
+  //     setCards((prev) =>
+  //       prev.map((card) =>
+  //         card.id === cardId ? { ...card, list_id: parseInt(toListId) } : card
+  //       )
+  //     );
+  //   });
 
-    socket.on("boardCreated", (newBoard) => {
-      setBoards((prev) => [
-        ...prev,
-        { ...newBoard, role: "owner", boardUserId: newBoard.boardId },
-      ]);
-    });
+  //   socket.on("userInvited", ({ user }) => {
+  //     setBoardUsers((prev) => [...prev, user]);
+  //   });
 
-    return () => {
-      socket.disconnect();
-    };
-  }, []);
+  //   socket.on("boardCreated", (newBoard) => {
+  //     setBoards((prev) => [
+  //       ...prev,
+  //       { ...newBoard, role: "owner", boardUserId: newBoard.boardId },
+  //     ]);
+  //   });
 
-  const emitCardCreated = (cardData: {
-    title: string;
-    description: string;
-    boardId: number | undefined;
-    listId: number;
-  }) => {
-    socket.emit("cardCreated", cardData);
-  };
+  //   return () => {
+  //     socket.disconnect();
+  //   };
+  // }, []);
+
+  // const emitCardCreated = (cardData: {
+  //   title: string;
+  //   description: string;
+  //   boardId: number | undefined;
+  //   listId: number;
+  // }) => {
+  //   socket.emit("cardCreated", cardData);
+  // };
 
   const [user, setUser] = useState<{
     id: number;
@@ -144,6 +145,40 @@ export default function Dashboard() {
     localStorage.removeItem("token");
     router.push("/"); // or use router.push("/") if using next/router or next/navigation
   };
+
+
+  /////////////////////////////////////////////
+  /////////// Socket Stuff ////////////////////
+  useEffect(() => { 
+
+    socket.on("connect", () => {
+      console.log("Socket connected:", socket.id);
+    }); 
+
+    socket.on("cardCreated", () => { 
+      refreshCards(); // fetch the cards for the selected board
+    });
+    
+  }, [selectedBoard]);
+
+
+  const refreshCards = async () => {
+    if (!selectedBoard?.boardId) {
+      console.warn("No selected board ID, skipping refresh.");
+      return;
+    }
+  
+    try {
+      const token = localStorage.getItem("token");
+      const res = await axios.get(`/api/boards/${selectedBoard.boardId}/cards`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setCards(res.data.cards);
+    } catch (err) {
+      console.error("Failed to refresh cards:", err);
+    }
+  };
+  
 
   useEffect(() => {
     const userString = localStorage.getItem("user");
@@ -362,10 +397,16 @@ export default function Dashboard() {
     <div className="min-h-screen p-8 bg-gray-100">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">Welcome, {user.name}</h1>
-        <Button variant="outline" onClick={handleLogout}>
-          <LogOut className="w-4 h-4 mr-2" />
-          Log Out
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => router.push('/settings')}>
+            <Settings className="w-4 h-4 mr-2" />
+            Settings
+          </Button>
+          <Button variant="outline" onClick={handleLogout}>
+            <LogOut className="w-4 h-4 mr-2" />
+            Log Out
+          </Button>
+        </div>
       </div>
       {error && <p className="text-red-500 mb-4">{error}</p>}
 
@@ -530,12 +571,8 @@ export default function Dashboard() {
                   { headers: { Authorization: `Bearer ${token}` } }
                 );
 
-                emitCardCreated({
-                  title: newCardTitle,
-                  description: newCardDesc,
-                  boardId: selectedBoard?.boardId,
-                  listId: todoList.id,
-                });
+                // Emits that a card was created 
+                socket.emit("cardCreated");
 
                 setNewCardTitle("");
                 setNewCardDesc("");
