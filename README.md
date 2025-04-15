@@ -55,6 +55,37 @@
 // Emit after creating a card
 socket.emit("cardCreated");
 ```
+
+### Server-to-Client Events 
+| Event Name    | Description                                         | Payload         |
+|---------------|-----------------------------------------------------|-----------------|
+| `cardCreated` | Broadcasted to all other connected clients. This should trigger a card refresh found in dashboard/page.tex | _None_ |
+
+```ts
+// path: /src/app/dashboard/page.ts
+socket.on("cardCreated", () => {
+  refreshCards(); // Fetch updated cards from API
+});
+
+  const refreshCards = async () => {
+    if (!selectedBoard?.boardId) {
+      console.warn("No selected board ID, skipping refresh.");
+      return;
+    }
+  
+    try {
+      const token = localStorage.getItem("token");
+      const res = await axios.get(`/api/boards/${selectedBoard.boardId}/cards`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setCards(res.data.cards);
+    } catch (err) {
+      console.error("Failed to refresh cards:", err);
+    }
+  };
+```
+
+
 ---
 
 ## Local Development
