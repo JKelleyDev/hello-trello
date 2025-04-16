@@ -1,11 +1,11 @@
-// import { NextRequest, NextResponse } from "next/server";
-// import bcrypt from "bcrypt";
-// import jwt from "jsonwebtoken";
-// import pool from "@/lib/db"; // adjust based on your setup
+ import { NextRequest, NextResponse } from "next/server";
+
+ import jwt from "jsonwebtoken";
+ import pool from "@/lib/db"; // adjust based on your setup
 
 // const JWT_SECRET = process.env.JWT_SECRET || "dev-secret-key";
 
-// export async function POST(req: NextRequest) {
+ export async function POST(req: NextRequest) {
 //   try {
 //     const { name, email, password } = await req.json();
 
@@ -47,4 +47,4 @@
 //     console.error("Register API error:", err);
 //     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
 //   }
-// }
+ }
