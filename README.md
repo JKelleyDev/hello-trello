@@ -35,13 +35,13 @@
 | GET    | `/api/boards/[boardId]/cards` | Gets all the cards for the baord with boardId   |
 | POST   | `/api/boards/[boardId]/cards` | Adds card to baord with boardId |
 | GET    | `/api/boards/[boardId]/lists` | Gets the lists 'to do' 'In Progress' and 'Done' for boardId|
-| POST   | `/api/boards/[boardId]/lists` |                                  |
-| GET    | `/api/boards/[boardId]/users` |                                  |
-| POST   | `/api/boards/[boardId]/users` |                                  |
-| POST   | `/api/cards`                 |                                  |
-| PUT    | `/api/cards/[cardId]`        |                                  |
-| DELETE | `/api/cards/[cardId]`        |                                  |
-| POST   | `/api/login`                  |                                  |
+| POST   | `/api/boards/[boardId]/lists` | Inserts the default lists when new board is created |
+| GET    | `/api/boards/[boardId]/users` | Get the assigned users for the given board |
+| POST   | `/api/boards/[boardId]/users` | Add a newly assigned user to the baord  |
+| POST   | `/api/cards`                 |  Add card into card table in db upon creation|
+| PUT    | `/api/cards/[cardId]`        | Called to update information for a editied card |
+| DELETE | `/api/cards/[cardId]`        | Removes a card from db and relevant board/lists when deleted |
+| POST   | `/api/login`                  | Authenicates user upon login, creates JWT and adds to local storage      |
 
 ## Socket.IO Events
 
