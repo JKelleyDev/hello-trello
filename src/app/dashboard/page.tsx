@@ -92,7 +92,7 @@ export default function Dashboard() {
   const handleLogout = () => {
     localStorage.removeItem("user");
     localStorage.removeItem("token");
-    router.push("/"); // or use router.push("/") if using next/router or next/navigation
+    router.push("/"); 
   };
 
 
@@ -105,9 +105,15 @@ export default function Dashboard() {
     }); 
 
     socket.on("cardCreated", () => { 
-      refreshCards(); // fetch the cards for the selected board
+      refreshCards(); // fetch the updated cards for the selected board
     });
     
+    socket.on("cardDeleted", () => {
+      refreshCards(); // fetch the updated cards for the selected board
+    })
+
+
+
   }, [selectedBoard]);
 
 
@@ -332,6 +338,7 @@ export default function Dashboard() {
         headers: { Authorization: `Bearer ${token}` },
       });
       setCards(cards.filter((card) => card.id !== cardId));
+      socket.emit("cardDeleted");
     } catch (err) {
       console.error("Error deleting card:", err);
       setError("Failed to delete card.");

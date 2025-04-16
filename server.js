@@ -23,7 +23,12 @@ app.prepare().then(() => {
 
     socket.on("cardCreated", () => {
       console.log("cardCreated received");
-      socket.broadcast.emit("cardCreated"); // broadcast without data
+      socket.broadcast.emit("cardCreated"); 
+    });
+
+    socket.on("cardDeleted", () => {
+      console.log("cardDeleted received");
+      socket.broadcast.emit("cardDeleted"); 
     });
 
     socket.on("disconnect", () => {
