@@ -50,16 +50,21 @@
 | Event Name    | Description                                         | Payload         |
 |---------------|-----------------------------------------------------|-----------------|
 | `cardCreated` | Triggered after a new card is added by a user. Informs other clients to refresh cards. | _None_ |
+| `cardDeleted` | Triggered after a card is deleted by a user. Informs other clients to refresh cards.   | _None_ |
 
 ```ts
 // Emit after creating a card
 socket.emit("cardCreated");
+
+// Emit after deleting a card
+socket.emit("cardDeleted");
 ```
 
 ### Server-to-Client Events 
 | Event Name    | Description                                         | Payload         |
 |---------------|-----------------------------------------------------|-----------------|
-| `cardCreated` | Broadcasted to all other connected clients. This should trigger a card refresh found in dashboard/page.tex | _None_ |
+| `cardCreated` | Broadcasted to all other connected clients. This should trigger a card refresh found in dashboard/page.tsx | _None_ |
+| `cardDeleted` | Broadcasted to all other connected clients. This should trigger a card refresh found in dashboard/page.tsx   | _None_ |
 
 ```ts
 // path: /src/app/dashboard/page.ts
@@ -67,12 +72,16 @@ socket.on("cardCreated", () => {
   refreshCards(); // Fetch updated cards from API
 });
 
+socket.on("cardDeleted", () => {
+      refreshCards(); // fetch the updated cards for the selected board
+    })
+
+  // Refresh Card function, checks if user has a board on page then gets the updated cards for that board 
   const refreshCards = async () => {
     if (!selectedBoard?.boardId) {
       console.warn("No selected board ID, skipping refresh.");
       return;
     }
-  
     try {
       const token = localStorage.getItem("token");
       const res = await axios.get(`/api/boards/${selectedBoard.boardId}/cards`, {
