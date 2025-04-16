@@ -32,9 +32,9 @@
 |--------|------------------------|----------------------------------------|
 | GET    | `/api/boards`          | Fetch all boards for the user          |
 | POST   | `/api/boards`          | Create a new board                     |
-| GET    | `/api/boards/[boardId]/cards` |                                  |
-| POST   | `/api/boards/[boardId]/cards` |                                  |
-| GET    | `/api/boards/[boardId]/lists` |                                  |
+| GET    | `/api/boards/[boardId]/cards` | Gets all the cards for the baord with boardId   |
+| POST   | `/api/boards/[boardId]/cards` | Adds card to baord with boardId |
+| GET    | `/api/boards/[boardId]/lists` | Gets the lists 'to do' 'In Progress' and 'Done' for boardId|
 | POST   | `/api/boards/[boardId]/lists` |                                  |
 | GET    | `/api/boards/[boardId]/users` |                                  |
 | POST   | `/api/boards/[boardId]/users` |                                  |
