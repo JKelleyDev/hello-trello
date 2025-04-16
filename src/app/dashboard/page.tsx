@@ -110,11 +110,11 @@ export default function Dashboard() {
     
     socket.on("cardDeleted", () => {
       refreshCards(); // fetch the updated cards for the selected board
-    })
+    });
 
     socket.on("cardMoved", () => {
       refreshCards(); // fetch the updated cards for the selected board
-    } )
+    } );
 
 
 
