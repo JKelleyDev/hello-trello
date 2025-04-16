@@ -112,6 +112,10 @@ export default function Dashboard() {
       refreshCards(); // fetch the updated cards for the selected board
     })
 
+    socket.on("cardMoved", () => {
+      refreshCards(); // fetch the updated cards for the selected board
+    } )
+
 
 
   }, [selectedBoard]);
@@ -305,6 +309,7 @@ export default function Dashboard() {
       setError("Failed to update card position.");
       setCards(cards); // Revert on error
     }
+    socket.emit("cardMoved"); // broadcast that a card was moved 
   };
 
   const handleEditCard = async () => {

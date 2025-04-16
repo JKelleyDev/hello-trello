@@ -31,9 +31,16 @@ app.prepare().then(() => {
       socket.broadcast.emit("cardDeleted"); 
     });
 
+    socket.on("cardMoved", () => {
+      console.log("cardMoved received"); 
+      socket.broadcast.emit("cardMoved"); 
+    })
+
     socket.on("disconnect", () => {
       console.log("Socket disconnected:", socket.id);
     });
+
+
   });
 
   httpServer
