@@ -51,20 +51,8 @@
 |---------------|-----------------------------------------------------|-----------------|
 | `cardCreated` | Triggered after a new card is added by a user. Informs other clients to refresh cards. | _None_ |
 | `cardDeleted` | Triggered after a card is deleted by a user. Informs other clients to refresh cards.   | _None_ |
+| `cardMoved`   | Triggered after a card is moved by a user. Informs other clients to refresh cards.     | _None_ |
 
-```ts
-// Emit after creating a card
-socket.emit("cardCreated");
-
-// Emit after deleting a card
-socket.emit("cardDeleted");
-```
-
-### Server-to-Client Events 
-| Event Name    | Description                                         | Payload         |
-|---------------|-----------------------------------------------------|-----------------|
-| `cardCreated` | Broadcasted to all other connected clients. This should trigger a card refresh found in dashboard/page.tsx | _None_ |
-| `cardDeleted` | Broadcasted to all other connected clients. This should trigger a card refresh found in dashboard/page.tsx   | _None_ |
 
 ```ts
 // path: /src/app/dashboard/page.ts
@@ -92,6 +80,39 @@ socket.on("cardDeleted", () => {
       console.error("Failed to refresh cards:", err);
     }
   };
+```
+
+### Server-to-Client Events 
+| Event Name    | Description                                         | Payload         |
+|---------------|-----------------------------------------------------|-----------------|
+| `cardCreated` | Broadcasted to all other connected clients. This should trigger a card refresh found in dashboard/page.tsx | _None_ |
+| `cardDeleted` | Broadcasted to all other connected clients. This should trigger a card refresh found in dashboard/page.tsx   | _None_ |
+| `cardMoved` | Broadcasted to all other connected clients. This should trigger a card refresh found in dashboard/page.tsx   | _None_ |
+
+```ts
+io.on("connection", (socket) => {
+    console.log("Socket connected:", socket.id);
+
+    socket.on("cardCreated", () => {
+      console.log("cardCreated received");
+      socket.broadcast.emit("cardCreated"); 
+    });
+
+    socket.on("cardDeleted", () => {
+      console.log("cardDeleted received");
+      socket.broadcast.emit("cardDeleted"); 
+    });
+
+    socket.on("cardMoved", () => {
+      console.log("cardMoved received"); 
+      socket.broadcast.emit("cardMoved"); 
+    });
+
+    socket.on("disconnect", () => {
+      console.log("Socket disconnected:", socket.id);
+    });
+
+  });
 ```
 
 
