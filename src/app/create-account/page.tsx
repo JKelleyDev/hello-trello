@@ -42,9 +42,7 @@ export default function CreateAccount() {
       });
 
       if (response.data.token) {
-        localStorage.setItem("token", response.data.token);
-        localStorage.setItem("user", JSON.stringify(response.data.user));
-        router.push("/dashboard");
+        router.push("/login");
       } else {
         setError("No token received from server.");
       }
