@@ -62,7 +62,11 @@ socket.on("cardCreated", () => {
 
 socket.on("cardDeleted", () => {
       refreshCards(); // fetch the updated cards for the selected board
-    })
+    });
+
+socket.on("cardMoved", () => {
+  refreshCards(); // fetch the updated cards for the selected board
+    } );
 
   // Refresh Card function, checks if user has a board on page then gets the updated cards for that board 
   const refreshCards = async () => {
