@@ -26,7 +26,6 @@
     "clsx": "^2.1.1",
     "express": "^5.1.0",
     "jsonwebtoken": "^9.0.2",
-    "lodash.debounce": "^4.0.8",
     "lucide-react": "^0.487.0",
     "mysql2": "^3.14.0",
     "mysql2-promise": "^0.1.4",
