@@ -1,46 +1,57 @@
 import { createServer } from "node:http";
 import next from "next";
-import { Server } from "socket.io";
+import { Server as SocketIOServer } from "socket.io";
 
 const dev = process.env.NODE_ENV !== "production";
-const hostname = "localhost";
+const hostname = "localhost"; // In production, you might leave this undefined
 const port = 3000;
 const app = next({ dev, hostname, port });
-const handler = app.getRequestHandler();
+const nextHandler = app.getRequestHandler();
 
 app.prepare().then(() => {
-  const httpServer = createServer(handler);
+  const httpServer = createServer();
 
-  const io = new Server(httpServer, {
+  // Create and attach Socket.IO server
+  const io = new SocketIOServer(httpServer, {
     cors: {
       origin: "*", // Set this to your frontend URL in production
-      methods: ["GET", "POST"]
+      methods: ["GET", "POST"],
     },
   });
 
+  // Handle socket events
   io.on("connection", (socket) => {
     console.log("Socket connected:", socket.id);
 
     socket.on("cardCreated", () => {
       console.log("cardCreated received");
-      socket.broadcast.emit("cardCreated"); 
+      socket.broadcast.emit("cardCreated");
     });
 
     socket.on("cardDeleted", () => {
       console.log("cardDeleted received");
-      socket.broadcast.emit("cardDeleted"); 
+      socket.broadcast.emit("cardDeleted");
     });
 
     socket.on("cardMoved", () => {
-      console.log("cardMoved received"); 
-      socket.broadcast.emit("cardMoved"); 
+      console.log("cardMoved received");
+      socket.broadcast.emit("cardMoved");
     });
 
     socket.on("disconnect", () => {
       console.log("Socket disconnected:", socket.id);
     });
+  });
 
-
+  // Handle HTTP requests
+  httpServer.on("request", (req, res) => {
+    if (req.url?.startsWith("/socket.io")) {
+      // Let socket.io handle socket.io requests
+      io.engine.handleRequest(req, res);
+    } else {
+      // Let Next.js handle everything else
+      nextHandler(req, res);
+    }
   });
 
   httpServer
