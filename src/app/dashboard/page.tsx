@@ -43,7 +43,6 @@ import {
   SelectItem,
   SelectValue,
 } from "@/components/ui/select";
-import debounce from "lodash.debounce";
 const socket = io(); 
 
 export default function Dashboard() {
@@ -98,23 +97,20 @@ export default function Dashboard() {
 
   /////////////////////////////////////////////
   /////////// Socket Stuff ////////////////////
-  const debouncedRefreshCards = debounce(() => {
-  refreshCards();
-}, 200); // 200ms delay
 
 useEffect(() => {
   if (!selectedBoard) return;
 
   const handleCardCreated = () => {
-    debouncedRefreshCards();
+    refreshCards();
   };
 
   const handleCardDeleted = () => {
-    debouncedRefreshCards();
+    refreshCards();
   };
 
   const handleCardMoved = () => {
-    debouncedRefreshCards();
+    refreshCards();
   };
 
   socket.on("cardCreated", handleCardCreated);
