@@ -98,27 +98,35 @@ export default function Dashboard() {
 
   /////////////////////////////////////////////
   /////////// Socket Stuff ////////////////////
-  useEffect(() => { 
+  useEffect(() => {
+  if (!selectedBoard) return; 
 
-    socket.on("connect", () => {
-      console.log("Socket connected:", socket.id);
-    }); 
+  const onCardCreated = () => {
+    console.log("Socket cardCreated received");
+    refreshCards();
+  };
 
-    socket.on("cardCreated", () => { 
-      refreshCards(); // fetch the updated cards for the selected board
-    });
-    
-    socket.on("cardDeleted", () => {
-      refreshCards(); // fetch the updated cards for the selected board
-    });
+  const onCardDeleted = () => {
+    console.log("Socket cardDeleted received");
+    refreshCards();
+  };
 
-    socket.on("cardMoved", () => {
-      refreshCards(); // fetch the updated cards for the selected board
-    } );
+  const onCardMoved = () => {
+    console.log("Socket cardMoved received");
+    refreshCards();
+  };
 
+  socket.on("cardCreated", onCardCreated);
+  socket.on("cardDeleted", onCardDeleted);
+  socket.on("cardMoved", onCardMoved);
 
-
-  }, [selectedBoard]);
+  return () => {
+    // 💡 Cleanup socket listeners when component unmounts or board changes
+    socket.off("cardCreated", onCardCreated);
+    socket.off("cardDeleted", onCardDeleted);
+    socket.off("cardMoved", onCardMoved);
+  };
+}, [selectedBoard]);
 
 
   const refreshCards = async () => {
