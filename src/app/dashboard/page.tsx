@@ -98,35 +98,37 @@ export default function Dashboard() {
 
   /////////////////////////////////////////////
   /////////// Socket Stuff ////////////////////
-  useEffect(() => {
-  if (!selectedBoard) return; 
+  const debouncedRefreshCards = debounce(() => {
+  refreshCards();
+}, 200); // 200ms delay
 
-  const onCardCreated = () => {
-    console.log("Socket cardCreated received");
-    refreshCards();
+useEffect(() => {
+  if (!selectedBoard) return;
+
+  const handleCardCreated = () => {
+    debouncedRefreshCards();
   };
 
-  const onCardDeleted = () => {
-    console.log("Socket cardDeleted received");
-    refreshCards();
+  const handleCardDeleted = () => {
+    debouncedRefreshCards();
   };
 
-  const onCardMoved = () => {
-    console.log("Socket cardMoved received");
-    refreshCards();
+  const handleCardMoved = () => {
+    debouncedRefreshCards();
   };
 
-  socket.on("cardCreated", onCardCreated);
-  socket.on("cardDeleted", onCardDeleted);
-  socket.on("cardMoved", onCardMoved);
+  socket.on("cardCreated", handleCardCreated);
+  socket.on("cardDeleted", handleCardDeleted);
+  socket.on("cardMoved", handleCardMoved);
 
   return () => {
-    // 💡 Cleanup socket listeners when component unmounts or board changes
-    socket.off("cardCreated", onCardCreated);
-    socket.off("cardDeleted", onCardDeleted);
-    socket.off("cardMoved", onCardMoved);
+    socket.off("cardCreated", handleCardCreated);
+    socket.off("cardDeleted", handleCardDeleted);
+    socket.off("cardMoved", handleCardMoved);
+    debouncedRefreshCards.cancel(); // 🧹 Clean up debounce timers
   };
 }, [selectedBoard]);
+
 
 
   const refreshCards = async () => {
