@@ -28,12 +28,13 @@ jobs:
 
       - name: Prepare app for deployment
         run: |
-          mkdir deploy
+          mkdir -p deploy/.next
           cp -r .next/standalone/* deploy/
           cp -r .next/static deploy/.next/static
           cp server.js deploy/server.js
           cp next.config.js deploy/next.config.js
           cp package.json deploy/package.json
+
 
       - name: Zip artifact for deployment
         run: |
