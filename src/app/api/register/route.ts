@@ -36,9 +36,9 @@ export async function POST(req: Request) {
     };
 
     return NextResponse.json({ user: newUser, token }, { status: 201 });
+
   } catch (error) {
     console.error("Register API error:", error);
     return NextResponse.json({ error: "Internal server error." }, { status: 500 });
   }
-return NextResponse.json({ message: "Register stub works" }, { status: 200 });
 }
