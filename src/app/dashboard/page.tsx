@@ -282,35 +282,35 @@ export default function Dashboard() {
   };
 
   const onDragEnd = async (result: DropResult) => {
-    const { source, destination } = result;
-    if (!destination || source.droppableId === destination.droppableId) return;
+  const { source, destination } = result;
+  if (!destination || source.droppableId === destination.droppableId) return;
 
-    const movedCard = cards.find(
-      (card) => card.id === parseInt(result.draggableId)
+  const movedCard = cards.find(
+    (card) => card.id === parseInt(result.draggableId)
+  );
+  if (!movedCard) return;
+
+  const updatedCards = cards.map((card) =>
+    card.id === movedCard.id
+      ? { ...card, list_id: parseInt(destination.droppableId) }
+      : card
+  );
+  setCards(updatedCards);
+
+  try {
+    const token = localStorage.getItem("token");
+    await axios.put(
+      `/api/cards/${movedCard.id}`,
+      { listId: parseInt(destination.droppableId) },
+      { headers: { Authorization: `Bearer ${token}` } }
     );
-    if (!movedCard) return;
-
-    const updatedCards = cards.map((card) =>
-      card.id === movedCard.id
-        ? { ...card, list_id: parseInt(destination.droppableId) }
-        : card
-    );
-    setCards(updatedCards);
-
-    try {
-      const token = localStorage.getItem("token");
-      await axios.put(
-        `/api/cards/${movedCard.id}`,
-        { listId: parseInt(destination.droppableId) },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-    } catch (err) {
-      console.error("Error updating card position:", err);
-      setError("Failed to update card position.");
-      setCards(cards); // Revert on error
-    }
-    socket.emit("cardMoved"); // broadcast that a card was moved 
-  };
+    socket.emit("cardMoved"); // 🚀 Now only emit if PUT succeeds
+  } catch (err) {
+    console.error("Error updating card position:", err);
+    setError("Failed to update card position.");
+    setCards(cards); // Revert cards if error
+  }
+};
 
   const handleEditCard = async () => {
     if (!editingCard) return;
