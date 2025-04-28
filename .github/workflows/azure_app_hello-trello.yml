@@ -29,7 +29,7 @@ jobs:
       - name: Prepare app for deployment
         run: |
           mkdir deploy
-          cp -r .next package.json server.js next.config.ts deploy/
+          cp -r .next public package.json server.js next.config.ts deploy/
           cp -r node_modules deploy/node_modules
         # Adjust files based on your project structure
 
