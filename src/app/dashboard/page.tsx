@@ -121,7 +121,6 @@ useEffect(() => {
     socket.off("cardCreated", handleCardCreated);
     socket.off("cardDeleted", handleCardDeleted);
     socket.off("cardMoved", handleCardMoved);
-    debouncedRefreshCards.cancel(); // 🧹 Clean up debounce timers
   };
 }, [selectedBoard]);
 
