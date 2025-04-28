@@ -8,7 +8,7 @@ export async function POST(req: Request) {
 
     if (!name || !email || !password) {
       return NextResponse.json({ error: "All fields are required." }, { status: 400 });
-    }
+    } 
 
     // Check for existing user
     const [existingRows]: any = await db.query("SELECT * FROM users WHERE email = ?", [email]);
